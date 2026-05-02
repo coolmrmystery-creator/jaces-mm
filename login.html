@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Login</title>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+
+  <style>
+    body {
+      margin:0;
+      font-family: Arial;
+      background: linear-gradient(135deg, #1e2a38, #4a6fa5);
+      color:white;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      height:100vh;
+    }
+
+    .card {
+      background: rgba(255,255,255,0.1);
+      padding:30px;
+      border-radius:15px;
+      backdrop-filter: blur(10px);
+      width:300px;
+      text-align:center;
+    }
+
+    input {
+      width:90%;
+      padding:10px;
+      margin:8px;
+      border:none;
+      border-radius:5px;
+    }
+
+    button {
+      width:95%;
+      padding:10px;
+      margin:5px;
+      background:#6ea8fe;
+      border:none;
+      color:white;
+      cursor:pointer;
+      border-radius:5px;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="card">
+  <h2>Trade Platform</h2>
+
+  <input id="email" placeholder="Email">
+  <input id="password" type="password" placeholder="Password">
+  <input id="username" placeholder="Username">
+
+  <button onclick="signup()">Sign Up</button>
+  <button onclick="login()">Login</button>
+</div>
+
+<script>
+const firebaseConfig = {
+ apiKey: "AIzaSyDFsQbvotmK9ZXG8srNEBkpZiIhUMGe5Dc",
+  authDomain: "jace-mm.firebaseapp.com",
+  databaseURL: "https://jace-mm-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "jace-mm",
+};
+
+firebase.initializeApp(firebaseConfig);
+
+function signup() {
+  firebase.auth().createUserWithEmailAndPassword(email.value, password.value)
+    .then((user) => {
+      firebase.database().ref("users/" + user.user.uid).set({
+        username: username.value,
+        email: email.value
+      });
+      window.location.href = "app.html";
+    });
+}
+
+function login() {
+  firebase.auth().signInWithEmailAndPassword(email.value, password.value)
+    .then(() => {
+      window.location.href = "app.html";
+    });
+}
+</script>
+
+</body>
+</html>
