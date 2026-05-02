@@ -1,11 +1,14 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Dashboard</title>
+  <title>Web3 Trade Dashboard</title>
 
+  <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+
+  <!-- Web3 -->
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.min.js"></script>
 
   <style>
@@ -17,10 +20,10 @@
     }
 
     .topbar {
-      background: rgba(0,0,0,0.4);
       padding:15px;
       display:flex;
       justify-content:space-between;
+      background: rgba(0,0,0,0.4);
     }
 
     .container {
@@ -75,12 +78,14 @@
   <!-- TRADE -->
   <div class="card">
     <h3>Create Trade</h3>
+
     <input id="toUser" placeholder="Username">
     <input id="offer" placeholder="I offer">
     <input id="want" placeholder="I want">
+
     <button onclick="createTrade()">Send Request</button>
 
-    <h3>Requests</h3>
+    <h3>Incoming Requests</h3>
     <div id="requests"></div>
   </div>
 
@@ -88,6 +93,7 @@
   <div class="card">
     <h3>Chat</h3>
     <div id="chatBox"></div>
+
     <input id="msg" placeholder="Message">
     <button onclick="sendMsg()">Send</button>
   </div>
@@ -95,96 +101,176 @@
 </div>
 
 <script>
+
 const firebaseConfig = {
-  apiKey: "AIzaSyDFsQbvotmK9ZXG8srNEBkpZiIhUMGe5Dc",
-  authDomain: "jace-mm.firebaseapp.com",
-  databaseURL: "https://jace-mm-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "jace-mm",
+  apiKey: "YOUR_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  databaseURL: "https://YOUR_PROJECT.firebaseio.com",
+  projectId: "YOUR_PROJECT"
 };
 
 firebase.initializeApp(firebaseConfig);
 
-let currentUser, chatRoom;
+let currentUser = null;
+let chatRoom = "";
+let provider, signer;
 
+// =======================
 // AUTH CHECK
+// =======================
 firebase.auth().onAuthStateChanged(user => {
-  if (!user) window.location.href = "login.html";
-  currentUser = user;
-  loadRequests();
+  if (!user) {
+    window.location.href = "login.html";
+  } else {
+    currentUser = user;
+    loadRequests();
+  }
 });
 
-// WALLET CONNECT
+// =======================
+// WALLET CONNECT (FIXED)
+// =======================
 async function connectWallet() {
-  const provider = new ethers.providers.Web3Provider(window.ethereum);
-  await provider.send("eth_requestAccounts", []);
-  alert("Wallet connected");
+  if (!window.ethereum) {
+    alert("Install MetaMask");
+    return;
+  }
+
+  try {
+    provider = new ethers.providers.Web3Provider(window.ethereum);
+    await provider.send("eth_requestAccounts", []);
+
+    signer = provider.getSigner();
+    const address = await signer.getAddress();
+
+    alert("Connected: " + address);
+
+  } catch (err) {
+    console.error(err);
+    alert("Wallet connection failed");
+  }
 }
 
-// FIND USER
-function findUser(username, cb) {
+// =======================
+// FIND USER (FIXED)
+// =======================
+function findUser(username, callback) {
   firebase.database().ref("users")
     .orderByChild("username")
     .equalTo(username)
-    .once("value", snap => {
-      snap.forEach(child => cb(child.key));
+    .once("value")
+    .then(snapshot => {
+      if (!snapshot.exists()) {
+        alert("User not found");
+        return;
+      }
+
+      snapshot.forEach(child => {
+        callback(child.key);
+      });
     });
 }
 
-// SEND TRADE
+// =======================
+// CREATE TRADE (FIXED)
+// =======================
 function createTrade() {
-  findUser(toUser.value, (uid) => {
+
+  const username = document.getElementById("toUser").value;
+  const offerVal = document.getElementById("offer").value;
+  const wantVal = document.getElementById("want").value;
+
+  if (!username || !offerVal || !wantVal) {
+    alert("Fill all fields");
+    return;
+  }
+
+  findUser(username, (toUID) => {
+
     firebase.database().ref("requests").push({
       from: currentUser.uid,
-      to: uid,
-      offer: offer.value,
-      want: want.value,
+      to: toUID,
+      offer: offerVal,
+      want: wantVal,
       status: "pending"
+    })
+    .then(() => {
+      alert("Trade request sent!");
     });
+
   });
 }
 
-// LOAD REQUESTS
+// =======================
+// LOAD REQUESTS (FIXED)
+// =======================
 function loadRequests() {
   firebase.database().ref("requests")
     .orderByChild("to")
     .equalTo(currentUser.uid)
-    .on("value", snap => {
-      requests.innerHTML = "";
-      snap.forEach(r => {
-        const data = r.val();
-        requests.innerHTML += `
-          <div>
+    .on("value", snapshot => {
+
+      const container = document.getElementById("requests");
+      container.innerHTML = "";
+
+      snapshot.forEach(item => {
+        const data = item.val();
+
+        container.innerHTML += `
+          <div style="margin:5px; padding:10px; background:#2a2a2a;">
             ${data.offer} → ${data.want}
-            <button onclick="accept('${r.key}','${data.from}')">Accept</button>
+            <button onclick="accept('${item.key}','${data.from}')">Accept</button>
           </div>
         `;
       });
     });
 }
 
-// ACCEPT
+// =======================
+// ACCEPT TRADE
+// =======================
 function accept(id, from) {
-  firebase.database().ref("requests/" + id).update({ status:"accepted" });
+  firebase.database().ref("requests/" + id).update({
+    status: "accepted"
+  });
+
   chatRoom = "trade_" + from + "_" + currentUser.uid;
+
   listenChat();
 }
 
-// CHAT
+// =======================
+// CHAT SYSTEM
+// =======================
 function listenChat() {
-  firebase.database().ref(chatRoom).on("child_added", snap => {
-    chatBox.innerHTML += "<p>"+snap.val().text+"</p>";
-  });
+  firebase.database().ref(chatRoom)
+    .on("child_added", snapshot => {
+      const msg = snapshot.val();
+      document.getElementById("chatBox").innerHTML += `<p>${msg.text}</p>`;
+    });
 }
 
 function sendMsg() {
-  firebase.database().ref(chatRoom).push({ text: msg.value });
-  msg.value = "";
+  const text = document.getElementById("msg").value;
+
+  if (!text) return;
+
+  firebase.database().ref(chatRoom).push({
+    text: text
+  });
+
+  document.getElementById("msg").value = "";
 }
 
+// =======================
 // LOGOUT
+// =======================
 function logout() {
-  firebase.auth().signOut();
+  firebase.auth().signOut().then(() => {
+    window.location.href = "login.html";
+  });
 }
+
 </script>
 
 </body>
