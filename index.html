@@ -11,6 +11,77 @@
 
 <body>
 
+  <!-- 🔵 YOUR UI (buttons, inputs) goes here -->
+  <input id="email" placeholder="Email">
+  <input id="password" placeholder="Password">
+  <button onclick="signup()">Signup</button>
+  <button onclick="login()">Login</button>
+
+  <input id="username" placeholder="Username">
+  <button onclick="saveUsername()">Save Username</button>
+
+  <!-- 🔴 ALL JAVASCRIPT GOES HERE -->
+  <script>
+
+    // Firebase setup
+    const firebaseConfig = {
+      apiKey: "YOUR_KEY",
+      authDomain: "YOUR_PROJECT.firebaseapp.com",
+      databaseURL: "https://YOUR_PROJECT.firebaseio.com",
+      projectId: "YOUR_PROJECT"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+
+    // =========================
+    // STEP 1: SIGNUP + LOGIN
+    // =========================
+
+    function signup() {
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+
+      firebase.auth().createUserWithEmailAndPassword(email, password)
+        .then(() => {
+          alert("Account created");
+        })
+        .catch(err => alert(err.message));
+    }
+
+    function login() {
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+
+      firebase.auth().signInWithEmailAndPassword(email, password)
+        .then(() => {
+          alert("Logged in");
+        })
+        .catch(err => alert(err.message));
+    }
+
+    // =========================
+    // STEP 2: SAVE USERNAME
+    // =========================
+
+    function saveUsername() {
+      const username = document.getElementById("username").value;
+      const user = firebase.auth().currentUser;
+
+      if (!user) {
+        alert("Login first");
+        return;
+      }
+
+      firebase.database().ref("users/" + user.uid).set({
+        username: username
+      });
+
+      alert("Username saved");
+    }
+
+  </script>
+
+
   <!-- ✅ STEP 5: UI (PUT HERE) -->
   <h2>Live Trade Chat</h2>
 
