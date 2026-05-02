@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Dashboard</title>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.min.js"></script>
+
+  <style>
+    body {
+      margin:0;
+      font-family: Arial;
+      background: linear-gradient(135deg, #1e2a38, #4a6fa5);
+      color:white;
+    }
+
+    .topbar {
+      background: rgba(0,0,0,0.4);
+      padding:15px;
+      display:flex;
+      justify-content:space-between;
+    }
+
+    .container {
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:20px;
+      padding:20px;
+    }
+
+    .card {
+      background: rgba(255,255,255,0.1);
+      padding:15px;
+      border-radius:10px;
+      backdrop-filter: blur(10px);
+    }
+
+    input, button {
+      width:95%;
+      padding:10px;
+      margin:5px;
+      border:none;
+      border-radius:5px;
+    }
+
+    button {
+      background:#6ea8fe;
+      color:white;
+      cursor:pointer;
+    }
+
+    #chatBox {
+      height:250px;
+      overflow:auto;
+      background:#111;
+      padding:10px;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="topbar">
+  <div>Web3 Trade Dashboard</div>
+  <div>
+    <button onclick="connectWallet()">Connect Wallet</button>
+    <button onclick="logout()">Logout</button>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- TRADE -->
+  <div class="card">
+    <h3>Create Trade</h3>
+    <input id="toUser" placeholder="Username">
+    <input id="offer" placeholder="I offer">
+    <input id="want" placeholder="I want">
+    <button onclick="createTrade()">Send Request</button>
+
+    <h3>Requests</h3>
+    <div id="requests"></div>
+  </div>
+
+  <!-- CHAT -->
+  <div class="card">
+    <h3>Chat</h3>
+    <div id="chatBox"></div>
+    <input id="msg" placeholder="Message">
+    <button onclick="sendMsg()">Send</button>
+  </div>
+
+</div>
+
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyDFsQbvotmK9ZXG8srNEBkpZiIhUMGe5Dc",
+  authDomain: "jace-mm.firebaseapp.com",
+  databaseURL: "https://jace-mm-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "jace-mm",
+};
+
+firebase.initializeApp(firebaseConfig);
+
+let currentUser, chatRoom;
+
+// AUTH CHECK
+firebase.auth().onAuthStateChanged(user => {
+  if (!user) window.location.href = "login.html";
+  currentUser = user;
+  loadRequests();
+});
+
+// WALLET CONNECT
+async function connectWallet() {
+  const provider = new ethers.providers.Web3Provider(window.ethereum);
+  await provider.send("eth_requestAccounts", []);
+  alert("Wallet connected");
+}
+
+// FIND USER
+function findUser(username, cb) {
+  firebase.database().ref("users")
+    .orderByChild("username")
+    .equalTo(username)
+    .once("value", snap => {
+      snap.forEach(child => cb(child.key));
+    });
+}
+
+// SEND TRADE
+function createTrade() {
+  findUser(toUser.value, (uid) => {
+    firebase.database().ref("requests").push({
+      from: currentUser.uid,
+      to: uid,
+      offer: offer.value,
+      want: want.value,
+      status: "pending"
+    });
+  });
+}
+
+// LOAD REQUESTS
+function loadRequests() {
+  firebase.database().ref("requests")
+    .orderByChild("to")
+    .equalTo(currentUser.uid)
+    .on("value", snap => {
+      requests.innerHTML = "";
+      snap.forEach(r => {
+        const data = r.val();
+        requests.innerHTML += `
+          <div>
+            ${data.offer} → ${data.want}
+            <button onclick="accept('${r.key}','${data.from}')">Accept</button>
+          </div>
+        `;
+      });
+    });
+}
+
+// ACCEPT
+function accept(id, from) {
+  firebase.database().ref("requests/" + id).update({ status:"accepted" });
+  chatRoom = "trade_" + from + "_" + currentUser.uid;
+  listenChat();
+}
+
+// CHAT
+function listenChat() {
+  firebase.database().ref(chatRoom).on("child_added", snap => {
+    chatBox.innerHTML += "<p>"+snap.val().text+"</p>";
+  });
+}
+
+function sendMsg() {
+  firebase.database().ref(chatRoom).push({ text: msg.value });
+  msg.value = "";
+}
+
+// LOGOUT
+function logout() {
+  firebase.auth().signOut();
+}
+</script>
+
+</body>
+</html>
