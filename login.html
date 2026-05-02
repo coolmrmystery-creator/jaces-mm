@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Login - Trade Platform</title>
+  <title>Login</title>
 
   <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -24,7 +24,6 @@
       background: rgba(255,255,255,0.1);
       padding:30px;
       border-radius:15px;
-      backdrop-filter: blur(10px);
       width:320px;
       text-align:center;
     }
@@ -48,9 +47,8 @@
       border-radius:5px;
     }
 
-    .error {
-      color: #ff6b6b;
-      font-size: 14px;
+    #error {
+      color:#ff6b6b;
     }
   </style>
 </head>
@@ -60,37 +58,42 @@
 <div class="card">
   <h2>Trade Platform</h2>
 
-  <input id="email" placeholder="Email">
+  <input id="email" type="email" placeholder="Email">
   <input id="password" type="password" placeholder="Password">
-  <input id="username" placeholder="Username (for signup only)">
+  <input id="username" placeholder="Username (signup only)">
 
-  <button onclick="signup()">Sign Up</button>
-  <button onclick="login()">Login</button>
+  <button id="signupBtn">Sign Up</button>
+  <button id="loginBtn">Login</button>
 
-  <p class="error" id="error"></p>
+  <p id="error"></p>
 </div>
 
 <script>
 
-// =======================
-// 🔧 YOUR FIREBASE CONFIG
-// =======================
+// 🔥 IMPORTANT: REPLACE WITH YOUR REAL CONFIG
 const firebaseConfig = {
- apiKey: "AIzaSyDFsQbvotmK9ZXG8srNEBkpZiIhUMGe5Dc",
+  apiKey: "AIzaSyDFsQbvotmK9ZXG8srNEBkpZiIhUMGe5Dc",
   authDomain: "jace-mm.firebaseapp.com",
   databaseURL: "https://jace-mm-default-rtdb.asia-southeast1.firebasedatabase.app",
   projectId: "jace-mm",
+};
 
 firebase.initializeApp(firebaseConfig);
 
-// =======================
+// ======================
+// BUTTON EVENTS (FIXED)
+// ======================
+document.getElementById("signupBtn").addEventListener("click", signup);
+document.getElementById("loginBtn").addEventListener("click", login);
+
+// ======================
 // SIGNUP
-// =======================
+// ======================
 function signup() {
 
-  const email = document.getElementById("email").value;
-  const password = document.getElementById("password").value;
-  const username = document.getElementById("username").value;
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value.trim();
+  const username = document.getElementById("username").value.trim();
 
   if (!email || !password || !username) {
     showError("Fill all fields");
@@ -100,28 +103,28 @@ function signup() {
   firebase.auth().createUserWithEmailAndPassword(email, password)
     .then((user) => {
 
-      // Save username
-      firebase.database().ref("users/" + user.user.uid).set({
+      return firebase.database().ref("users/" + user.user.uid).set({
         username: username,
         email: email
       });
 
-      // Redirect
+    })
+    .then(() => {
       window.location.href = "app.html";
     })
     .catch(err => showError(err.message));
 }
 
-// =======================
+// ======================
 // LOGIN
-// =======================
+// ======================
 function login() {
 
-  const email = document.getElementById("email").value;
-  const password = document.getElementById("password").value;
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value.trim();
 
   if (!email || !password) {
-    showError("Enter email & password");
+    showError("Enter email and password");
     return;
   }
 
@@ -132,9 +135,9 @@ function login() {
     .catch(err => showError(err.message));
 }
 
-// =======================
+// ======================
 // ERROR DISPLAY
-// =======================
+// ======================
 function showError(msg) {
   document.getElementById("error").innerText = msg;
 }
