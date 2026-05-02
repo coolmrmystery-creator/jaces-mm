@@ -66,7 +66,7 @@
 <body>
 
 <div class="topbar">
-  <div>Web3 Trade Dashboard</div>
+  <div id="walletDisplay">Web3 Trade Dashboard</div>
   <div>
     <button onclick="connectWallet()">Connect Wallet</button>
     <button onclick="logout()">Logout</button>
@@ -75,7 +75,6 @@
 
 <div class="container">
 
-  <!-- TRADE -->
   <div class="card">
     <h3>Create Trade</h3>
 
@@ -89,7 +88,6 @@
     <div id="requests"></div>
   </div>
 
-  <!-- CHAT -->
   <div class="card">
     <h3>Chat</h3>
     <div id="chatBox"></div>
@@ -102,12 +100,16 @@
 
 <script>
 
+console.log("App loaded");
+
+// =======================
+// FIREBASE CONFIG
+// =======================
 const firebaseConfig = {
   apiKey: "AIzaSyDFsQbvotmK9ZXG8srNEBkpZiIhUMGe5Dc",
   authDomain: "jace-mm.firebaseapp.com",
   databaseURL: "https://jace-mm-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "jace-mm",
-
+  projectId: "jace-mm"
 };
 
 firebase.initializeApp(firebaseConfig);
@@ -129,9 +131,14 @@ firebase.auth().onAuthStateChanged(user => {
 });
 
 // =======================
-// WALLET CONNECT (FIXED)
+// WALLET FIXED
 // =======================
+if (window.ethereum) {
+  window.ethereum.on('accountsChanged', () => location.reload());
+}
+
 async function connectWallet() {
+
   if (!window.ethereum) {
     alert("Install MetaMask");
     return;
@@ -139,12 +146,17 @@ async function connectWallet() {
 
   try {
     provider = new ethers.providers.Web3Provider(window.ethereum);
-    await provider.send("eth_requestAccounts", []);
+
+    await window.ethereum.request({ method: 'eth_requestAccounts' });
 
     signer = provider.getSigner();
+
     const address = await signer.getAddress();
 
-    alert("Connected: " + address);
+    document.getElementById("walletDisplay").innerText =
+      "Connected: " + address.slice(0,6) + "..." + address.slice(-4);
+
+    console.log("Wallet connected:", address);
 
   } catch (err) {
     console.error(err);
@@ -153,7 +165,7 @@ async function connectWallet() {
 }
 
 // =======================
-// FIND USER (FIXED)
+// FIND USER
 // =======================
 function findUser(username, callback) {
   firebase.database().ref("users")
@@ -161,6 +173,7 @@ function findUser(username, callback) {
     .equalTo(username)
     .once("value")
     .then(snapshot => {
+
       if (!snapshot.exists()) {
         alert("User not found");
         return;
@@ -173,7 +186,7 @@ function findUser(username, callback) {
 }
 
 // =======================
-// CREATE TRADE (FIXED)
+// CREATE TRADE
 // =======================
 function createTrade() {
 
@@ -195,15 +208,13 @@ function createTrade() {
       want: wantVal,
       status: "pending"
     })
-    .then(() => {
-      alert("Trade request sent!");
-    });
+    .then(() => alert("Trade request sent!"));
 
   });
 }
 
 // =======================
-// LOAD REQUESTS (FIXED)
+// LOAD REQUESTS
 // =======================
 function loadRequests() {
   firebase.database().ref("requests")
@@ -231,6 +242,7 @@ function loadRequests() {
 // ACCEPT TRADE
 // =======================
 function accept(id, from) {
+
   firebase.database().ref("requests/" + id).update({
     status: "accepted"
   });
@@ -241,7 +253,7 @@ function accept(id, from) {
 }
 
 // =======================
-// CHAT SYSTEM
+// CHAT
 // =======================
 function listenChat() {
   firebase.database().ref(chatRoom)
@@ -256,9 +268,7 @@ function sendMsg() {
 
   if (!text) return;
 
-  firebase.database().ref(chatRoom).push({
-    text: text
-  });
+  firebase.database().ref(chatRoom).push({ text: text });
 
   document.getElementById("msg").value = "";
 }
