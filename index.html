@@ -2,13 +2,7 @@
 <html>
 <head>
   <title>Web3 Escrow</title>
- <script>
-const wallet = localStorage.getItem("wallet");
 
-if (!wallet) {
-  window.location.href = "login.html";
-}
-</script>
 
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.min.js"></script>
 
@@ -71,12 +65,6 @@ async function createTrade() {
 }
   <button onclick="logout()">Logout</button>
 
-<script>
-function logout() {
-  localStorage.removeItem("wallet");
-  window.location.href = "login.html";
-}
-</script>
 
 </script>
 
