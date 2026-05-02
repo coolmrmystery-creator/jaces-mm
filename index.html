@@ -1,74 +1,69 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Escrow Chat</title>
+  <title>Web3 Escrow</title>
 
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.min.js"></script>
+
+  <style>
+    body { font-family: Arial; background:#0f0f0f; color:white; text-align:center; }
+    button { padding:10px; margin:5px; cursor:pointer; }
+  </style>
 </head>
 
 <body>
 
-  <h2>Live Trade Chat</h2>
+<h2>Web3 Escrow Platform</h2>
 
-  <input id="myAddress" placeholder="Your wallet address">
-  <input id="otherAddress" placeholder="Other trader address">
-  <button onclick="startChat()">Start Chat</button>
+<button onclick="connect()">Connect Wallet</button>
+<p id="wallet"></p>
 
-  <br><br>
+<hr>
 
-  <input id="msg" placeholder="Type message">
-  <button onclick="send()">Send</button>
+<input id="seller" placeholder="Seller address">
+<input id="amount" placeholder="ETH amount">
 
-  <div id="chatBox" style="border:1px solid black; height:200px; overflow:auto;"></div>
+<button onclick="createTrade()">Create Escrow</button>
 
-  <script>
-    const firebaseConfig = {
-      apiKey: "YOUR_API_KEY_HERE",
-      authDomain: "jace-mm.firebaseapp.com",
-      databaseURL: "https://jace-mm-default-rtdb.asia-southeast1.firebasedatabase.app",
-      projectId: "jace-mm",
-    };
+<script>
 
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
+let provider, signer, contract;
 
-    let tradeRoom = "";
+// connect wallet
+async function connect() {
+  provider = new ethers.providers.Web3Provider(window.ethereum);
+  await provider.send("eth_requestAccounts", []);
+  signer = provider.getSigner();
 
-    function startChat() {
-      const userA = document.getElementById("myAddress").value;
-      const userB = document.getElementById("otherAddress").value;
+  const address = await signer.getAddress();
+  wallet.innerText = address;
+}
 
-      tradeRoom = "trade_" + userA + "_" + userB;
+// deploy / interact contract
+async function createTrade() {
 
-      listenMessages();
-      alert("Chat started!");
-    }
+  const seller = document.getElementById("seller").value;
+  const value = document.getElementById("amount").value;
 
-    function send() {
-      const text = document.getElementById("msg").value;
-      const sender = document.getElementById("myAddress").value;
+  const abi = [
+    "function confirm()",
+    "function cancel()"
+  ];
 
-      if (!text) return;
+  // You deploy contract separately in Remix and paste address here:
+  const contractAddress = "PASTE_DEPLOYED_CONTRACT_ADDRESS";
 
-      db.ref(tradeRoom).push({
-        text: text,
-        sender: sender,
-        time: Date.now()
-      });
+  contract = new ethers.Contract(contractAddress, abi, signer);
 
-      document.getElementById("msg").value = "";
-    }
+  const tx = await signer.sendTransaction({
+    to: contractAddress,
+    value: ethers.utils.parseEther(value)
+  });
 
-    function listenMessages() {
-      db.ref(tradeRoom).on("child_added", (snapshot) => {
-        const msg = snapshot.val();
+  alert("Escrow created!");
+}
 
-        const box = document.getElementById("chatBox");
-        box.innerHTML += `<p><b>${msg.sender}:</b> ${msg.text}</p>`;
-      });
-    }
-  </script>
+</script>
 
 </body>
 </html>
