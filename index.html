@@ -1,67 +1,84 @@
 <!DOCTYPE html>
 <html>
+
 <head>
-  <title>Escrow DApp</title>
-  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.min.js"></script>
+  <title>Escrow Chat</title>
+
+  <!-- ✅ STEP 2: Firebase scripts (PUT HERE) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 </head>
+
 <body>
 
-<h2>Simple Escrow</h2>
+  <!-- ✅ STEP 5: UI (PUT HERE) -->
+  <h2>Live Trade Chat</h2>
 
-<button onclick="connectWallet()">Connect Wallet</button>
-<p id="account"></p>
+  <input id="myAddress" placeholder="Your wallet address">
+  <input id="otherAddress" placeholder="Other trader address">
+  <button onclick="startChat()">Start Chat</button>
 
-<hr>
+  <br><br>
 
-<h3>Contract</h3>
-<input id="contractAddress" placeholder="Contract Address">
-<button onclick="loadContract()">Load Contract</button>
+  <input id="msg" placeholder="Type message">
+  <button onclick="send()">Send</button>
 
-<hr>
+  <div id="chatBox" style="border:1px solid black; height:200px; overflow:auto;"></div>
 
-<h3>Actions</h3>
-<button onclick="confirm()">Confirm Trade</button>
-<button onclick="cancel()">Cancel Trade</button>
 
-<script>
-let provider, signer, contract;
+  <!-- ✅ STEP 3 + 4: ALL JS GOES AT BOTTOM -->
+  <script>
 
-const abi = [
-  "function confirm() public",
-  "function cancel() public"
-];
+    // STEP 3: Firebase config
+    const firebaseConfig = {
+      apiKey: "YOUR_KEY",
+      authDomain: "YOUR_PROJECT.firebaseapp.com",
+      databaseURL: "https://YOUR_PROJECT.firebaseio.com",
+      projectId: "YOUR_PROJECT"
+    };
 
-async function connectWallet() {
-  if (window.ethereum) {
-    await ethereum.request({ method: 'eth_requestAccounts' });
-    provider = new ethers.providers.Web3Provider(window.ethereum);
-    signer = provider.getSigner();
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
 
-    const address = await signer.getAddress();
-    document.getElementById("account").innerText = "Connected: " + address;
-  } else {
-    alert("Install MetaMask");
-  }
-}
 
-function loadContract() {
-  const addr = document.getElementById("contractAddress").value;
-  contract = new ethers.Contract(addr, abi, signer);
-  alert("Contract loaded");
-}
+    // STEP 4: Chat logic
+    let tradeRoom = "";
 
-async function confirm() {
-  const tx = await contract.confirm();
-  await tx.wait();
-  alert("Confirmed!");
-}
+    function startChat() {
+      const userA = document.getElementById("myAddress").value;
+      const userB = document.getElementById("otherAddress").value;
 
-async function cancel() {
-  const tx = await contract.cancel();
-  await tx.wait();
-  alert("Cancelled!");
-}
-</script>
+      tradeRoom = "trade_" + userA + "_" + userB;
+
+      listenMessages();
+      alert("Chat started!");
+    }
+
+    function send() {
+      const text = document.getElementById("msg").value;
+      const sender = document.getElementById("myAddress").value;
+
+      if (!text) return;
+
+      db.ref(tradeRoom).push({
+        text: text,
+        sender: sender,
+        time: Date.now()
+      });
+
+      document.getElementById("msg").value = "";
+    }
+
+    function listenMessages() {
+      db.ref(tradeRoom).on("child_added", (snapshot) => {
+        const msg = snapshot.val();
+
+        const box = document.getElementById("chatBox");
+        box.innerHTML += `<p><b>${msg.sender}:</b> ${msg.text}</p>`;
+      });
+    }
+
+  </script>
 
 </body>
 </html>
