@@ -361,7 +361,7 @@ function createTrade(){
   const username =
   document.getElementById(
     "toUser"
-  ).value;
+  ).value.toLowerCase().trim();
 
   const offer =
   document.getElementById(
@@ -380,29 +380,53 @@ function createTrade(){
     return;
   }
 
-  findUser(username, (toUID)=>{
+  firebase.database()
+  .ref("users")
+  .once("value")
 
-    firebase.database()
-    .ref("requests")
-    .push({
+  .then(snapshot => {
 
-      from: currentUser.uid,
+    let found = false;
 
-      to: toUID,
+    snapshot.forEach(child => {
 
-      offer: offer,
+      const user = child.val();
 
-      want: want,
+      if(user.username === username){
 
-      status: "pending"
+        found = true;
 
-    })
+        firebase.database()
+        .ref("requests")
+        .push({
 
-    .then(()=>{
+          from: currentUser.uid,
 
-      alert("Trade request sent!");
+          to: child.key,
+
+          offer: offer,
+
+          want: want,
+
+          status: "pending"
+
+        })
+
+        .then(() => {
+
+          alert("Trade request sent!");
+
+        });
+
+      }
 
     });
+
+    if(!found){
+
+      alert("User not found");
+
+    }
 
   });
 
