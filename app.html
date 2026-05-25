@@ -1,471 +1,698 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Web3 Trade Dashboard</title>
+  <title>Web3 Escrow Trade Platform</title>
 
   <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 
-  <!-- Web3 -->
+  <!-- Ethers -->
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.min.js"></script>
 
   <style>
-    body {
+
+    body{
       margin:0;
-      font-family: Arial;
-      background: linear-gradient(135deg, #1e2a38, #4a6fa5);
+      font-family:Arial;
+      background:linear-gradient(135deg,#1e2a38,#4a6fa5);
       color:white;
     }
 
-    .topbar {
-      padding:15px;
+    .topbar{
       display:flex;
       justify-content:space-between;
-      background: rgba(0,0,0,0.4);
+      align-items:center;
+      padding:15px;
+      background:rgba(0,0,0,0.4);
+      backdrop-filter:blur(10px);
     }
 
-    .container {
+    .container{
       display:grid;
       grid-template-columns:1fr 1fr;
       gap:20px;
       padding:20px;
     }
 
-    .card {
-      background: rgba(255,255,255,0.1);
-      padding:15px;
-      border-radius:10px;
-      backdrop-filter: blur(10px);
+    .card{
+      background:rgba(255,255,255,0.1);
+      border-radius:15px;
+      padding:20px;
+      backdrop-filter:blur(10px);
+      box-shadow:0 0 15px rgba(0,0,0,0.2);
     }
 
-    input, button {
+    input{
       width:95%;
-      padding:10px;
-      margin:5px;
+      padding:12px;
+      margin-top:10px;
       border:none;
-      border-radius:5px;
+      border-radius:8px;
+      outline:none;
     }
 
-    button {
+    button{
+      width:100%;
+      padding:12px;
+      margin-top:10px;
+      border:none;
+      border-radius:8px;
       background:#6ea8fe;
       color:white;
       cursor:pointer;
+      font-weight:bold;
+      transition:0.2s;
     }
 
-    #chatBox {
-      height:250px;
-      overflow:auto;
+    button:hover{
+      opacity:0.9;
+    }
+
+    #chatBox{
+      height:300px;
+      overflow-y:auto;
       background:#111;
+      border-radius:10px;
       padding:10px;
     }
+
+    .msg{
+      background:#2a2a2a;
+      padding:8px;
+      border-radius:8px;
+      margin:5px 0;
+    }
+
+    .request{
+      background:#2a2a2a;
+      padding:10px;
+      border-radius:10px;
+      margin-top:10px;
+    }
+
   </style>
 </head>
 
 <body>
 
 <div class="topbar">
-  <div id="walletDisplay">Web3 Trade Dashboard</div>
-  <div>
-    <button onclick="connectWallet()">Connect Wallet</button>
-    <button onclick="logout()">Logout</button>
+
+  <div id="walletDisplay">
+    Web3 Escrow Platform
   </div>
+
+  <div>
+    <button onclick="connectWallet()">
+      Connect Wallet
+    </button>
+
+    <button onclick="logout()">
+      Logout
+    </button>
+  </div>
+
 </div>
 
 <div class="container">
 
+  <!-- LEFT -->
   <div class="card">
-    <h3>Create Trade</h3>
-    
-    <input id="toUser" placeholder="Username">
-    <input id="offer" placeholder="I offer">
-    <input id="want" placeholder="I want">
 
-    <input id="sellerWallet" placeholder="Seller Wallet Address">
+    <h2>Create Trade</h2>
 
-<input id="ethAmount" placeholder="ETH Amount">
+    <input id="toUser" placeholder="Trader Username">
 
-<button onclick="createEscrowTrade()">
-  Create Escrow
-</button>
+    <input id="offer" placeholder="What you offer">
 
-    <button onclick="createTrade()">Send Request</button>
+    <input id="want" placeholder="What you want">
 
-    <h3>Incoming Requests</h3>
+    <button onclick="createTrade()">
+      Send Trade Request
+    </button>
+
+    <hr>
+
+    <h2>Escrow</h2>
+
+    <input id="sellerWallet"
+    placeholder="Seller Wallet Address">
+
+    <input id="ethAmount"
+    placeholder="ETH Amount">
+
+    <button onclick="createEscrowTrade()">
+      Create Escrow
+    </button>
+
+    <input id="tradeId"
+    placeholder="Trade ID">
+
+    <button onclick="confirmEscrow()">
+      Confirm Trade
+    </button>
+
+    <hr>
+
+    <h2>Incoming Requests</h2>
+
     <div id="requests"></div>
+
   </div>
 
+  <!-- RIGHT -->
   <div class="card">
-    <h3>Chat</h3>
+
+    <h2>Trade Chat</h2>
+
     <div id="chatBox"></div>
 
-    <input id="msg" placeholder="Message">
-    <button onclick="sendMsg()">Send</button>
+    <input id="msg"
+    placeholder="Message">
 
-    <input id="tradeId" placeholder="Trade ID">
+    <button onclick="sendMsg()">
+      Send
+    </button>
 
-<button onclick="confirmEscrow()">
-Confirm Trade
-</button>
   </div>
 
 </div>
 
 <script>
 
-console.log("App loaded");
-  // ====================
-  //wallwt connect fix#2
-  // ====================
-async function createEscrowTrade() {
+console.log("Platform Loaded");
 
-  if(!signer) {
+// ========================
+// FIREBASE CONFIG
+// ========================
+
+const firebaseConfig = {
+
+  apiKey: "YOUR_API_KEY",
+
+  authDomain:
+  "YOUR_PROJECT.firebaseapp.com",
+
+  databaseURL:
+  "https://YOUR_PROJECT.firebaseio.com",
+
+  projectId: "YOUR_PROJECT"
+
+};
+
+firebase.initializeApp(firebaseConfig);
+
+// ========================
+// VARIABLES
+// ========================
+
+let currentUser = null;
+
+let chatRoom = "";
+
+let provider, signer, contract;
+
+let chatListenerAttached = false;
+
+// ========================
+// CONTRACT
+// ========================
+
+const contractAddress =
+"PASTE_YOUR_CONTRACT_ADDRESS";
+
+const contractABI = [
+
+  PASTE_YOUR_ABI_HERE
+
+];
+
+// ========================
+// WALLET EVENTS
+// ========================
+
+if(window.ethereum){
+
+  window.ethereum.on(
+    "accountsChanged",
+    () => location.reload()
+  );
+
+}
+
+// ========================
+// AUTH CHECK
+// ========================
+
+firebase.auth().onAuthStateChanged(user => {
+
+  if(!user){
+
+    window.location.href =
+    "login.html";
+
+  }else{
+
+    currentUser = user;
+
+    loadRequests();
+
+    chatRoom =
+    localStorage.getItem("chatRoom");
+
+    listenChat();
+
+  }
+
+});
+
+// ========================
+// CONNECT WALLET
+// ========================
+
+async function connectWallet(){
+
+  if(!window.ethereum){
+
+    alert("Install MetaMask");
+
+    return;
+  }
+
+  try{
+
+    provider =
+    new ethers.providers.Web3Provider(
+      window.ethereum
+    );
+
+    await window.ethereum.request({
+      method: "eth_requestAccounts"
+    });
+
+    signer = provider.getSigner();
+
+    const address =
+    await signer.getAddress();
+
+    contract = new ethers.Contract(
+      contractAddress,
+      contractABI,
+      signer
+    );
+
+    document.getElementById(
+      "walletDisplay"
+    ).innerText =
+    "Connected: " +
+    address.slice(0,6) +
+    "..." +
+    address.slice(-4);
+
+    alert("Wallet Connected");
+
+  }catch(err){
+
+    console.error(err);
+
+    alert("Wallet connection failed");
+
+  }
+
+}
+
+// ========================
+// FIND USER
+// ========================
+
+function findUser(username, callback){
+
+  firebase.database()
+  .ref("users")
+  .orderByChild("username")
+  .equalTo(username)
+  .once("value")
+  .then(snapshot => {
+
+    if(!snapshot.exists()){
+
+      alert("User not found");
+
+      return;
+    }
+
+    snapshot.forEach(child => {
+
+      callback(child.key);
+
+    });
+
+  });
+
+}
+
+// ========================
+// CREATE TRADE
+// ========================
+
+function createTrade(){
+
+  const username =
+  document.getElementById(
+    "toUser"
+  ).value;
+
+  const offer =
+  document.getElementById(
+    "offer"
+  ).value;
+
+  const want =
+  document.getElementById(
+    "want"
+  ).value;
+
+  if(!username || !offer || !want){
+
+    alert("Fill all fields");
+
+    return;
+  }
+
+  findUser(username, (toUID)=>{
+
+    firebase.database()
+    .ref("requests")
+    .push({
+
+      from: currentUser.uid,
+
+      to: toUID,
+
+      offer: offer,
+
+      want: want,
+
+      status: "pending"
+
+    })
+
+    .then(()=>{
+
+      alert("Trade request sent!");
+
+    });
+
+  });
+
+}
+
+// ========================
+// LOAD REQUESTS
+// ========================
+
+function loadRequests(){
+
+  firebase.database()
+  .ref("requests")
+  .orderByChild("to")
+  .equalTo(currentUser.uid)
+  .on("value", snapshot => {
+
+    const container =
+    document.getElementById(
+      "requests"
+    );
+
+    container.innerHTML = "";
+
+    snapshot.forEach(item => {
+
+      const data = item.val();
+
+      container.innerHTML += `
+
+      <div class="request">
+
+        <p>
+        ${data.offer}
+        →
+        ${data.want}
+        </p>
+
+        <button onclick=
+        "accept(
+        '${item.key}',
+        '${data.from}'
+        )">
+
+        Accept
+
+        </button>
+
+      </div>
+
+      `;
+
+    });
+
+  });
+
+}
+
+// ========================
+// ACCEPT TRADE
+// ========================
+
+function accept(id, from){
+
+  firebase.database()
+  .ref("requests/" + id)
+  .update({
+
+    status: "accepted"
+
+  });
+
+  const users =
+  [from, currentUser.uid].sort();
+
+  chatRoom =
+  "trade_" +
+  users[0] +
+  "_" +
+  users[1];
+
+  localStorage.setItem(
+    "chatRoom",
+    chatRoom
+  );
+
+  alert("Trade accepted");
+
+}
+
+// ========================
+// CHAT SYSTEM
+// ========================
+
+function listenChat(){
+
+  if(!chatRoom){
+
+    chatRoom =
+    localStorage.getItem(
+      "chatRoom"
+    );
+
+  }
+
+  if(!chatRoom) return;
+
+  if(chatListenerAttached) return;
+
+  chatListenerAttached = true;
+
+  const chatBox =
+  document.getElementById(
+    "chatBox"
+  );
+
+  firebase.database()
+  .ref(chatRoom)
+  .on("child_added", snapshot => {
+
+    const msg = snapshot.val();
+
+    const div =
+    document.createElement("div");
+
+    div.className = "msg";
+
+    div.innerText = msg.text;
+
+    chatBox.appendChild(div);
+
+    chatBox.scrollTop =
+    chatBox.scrollHeight;
+
+  });
+
+}
+
+function sendMsg(){
+
+  const text =
+  document.getElementById(
+    "msg"
+  ).value;
+
+  if(!text) return;
+
+  if(!chatRoom){
+
+    chatRoom =
+    localStorage.getItem(
+      "chatRoom"
+    );
+
+  }
+
+  firebase.database()
+  .ref(chatRoom)
+  .push({
+
+    text: text,
+
+    sender: currentUser.uid,
+
+    time: Date.now()
+
+  });
+
+  document.getElementById(
+    "msg"
+  ).value = "";
+
+}
+
+// ========================
+// CREATE ESCROW
+// ========================
+
+async function createEscrowTrade(){
+
+  if(!signer){
+
     alert("Connect wallet first");
+
     return;
   }
 
   const seller =
-    document.getElementById("sellerWallet").value;
+  document.getElementById(
+    "sellerWallet"
+  ).value;
 
   const amount =
-    document.getElementById("ethAmount").value;
+  document.getElementById(
+    "ethAmount"
+  ).value;
 
-  try {
+  if(!seller || !amount){
 
-    const tx = await contract.createTrade(
+    alert("Fill all fields");
+
+    return;
+  }
+
+  try{
+
+    const tx =
+    await contract.createTrade(
+
       seller,
+
       {
-        value: ethers.utils.parseEther(amount)
+
+        value:
+        ethers.utils.parseEther(
+          amount
+        )
+
       }
+
     );
 
     await tx.wait();
 
     alert("Escrow created!");
 
-  } catch(err) {
+  }catch(err){
+
     console.error(err);
+
     alert("Escrow failed");
+
   }
-}
-  
-// =======================
-// FIREBASE CONFIG
-// =======================
-const firebaseConfig = {
-  apiKey: "AIzaSyDFsQbvotmK9ZXG8srNEBkpZiIhUMGe5Dc",
-  authDomain: "jace-mm.firebaseapp.com",
-  databaseURL: "https://jace-mm-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "jace-mm"
-};
 
-firebase.initializeApp(firebaseConfig);
-
-let currentUser = null;
-let chatRoom = "";
-let provider, signer;
-let chatListenerAttached = false;
-
-// =======================
-// AUTH CHECK
-// =======================
-firebase.auth().onAuthStateChanged(user => {
-  if (!user) {
-    window.location.href = "login.html";
-  } else {
-    currentUser = user;
-    loadRequests();
-  }
-});
-
-// =======================
-// WALLET FIXED
-// =======================
-if (window.ethereum) {
-  window.ethereum.on('accountsChanged', () => location.reload());
 }
 
-async function connectWallet() {
+// ========================
+// CONFIRM ESCROW
+// ========================
 
-  if (!window.ethereum) {
-    alert("Install MetaMask");
+async function confirmEscrow(){
+
+  const tradeId =
+  document.getElementById(
+    "tradeId"
+  ).value;
+
+  if(!tradeId){
+
+    alert("Enter trade ID");
+
     return;
   }
 
-  try {
-    provider = new ethers.providers.Web3Provider(window.ethereum);
-
-    await window.ethereum.request({ method: 'eth_requestAccounts' });
-
-    signer = provider.getSigner();
-    contract = new ethers.Contract(
-  contractAddress,
-  contractABI,
-  signer
-);
-
-    const address = await signer.getAddress();
-
-    document.getElementById("walletDisplay").innerText =
-      "Connected: " + address.slice(0,6) + "..." + address.slice(-4);
-
-    console.log("Wallet connected:", address);
-
-  } catch (err) {
-    console.error(err);
-    alert("Wallet connection failed");
-  }
-}
-
-// =======================
-// FIND USER
-// =======================
-function findUser(username, callback) {
-  firebase.database().ref("users")
-    .orderByChild("username")
-    .equalTo(username)
-    .once("value")
-    .then(snapshot => {
-
-      if (!snapshot.exists()) {
-        alert("User not found");
-        return;
-      }
-
-      snapshot.forEach(child => {
-        callback(child.key);
-      });
-    });
-}
-
-// =======================
-// CREATE TRADE
-// =======================
-let chatListenerAttached = false;
-
-function listenChat() {
-
-  if (!chatRoom) {
-    chatRoom = localStorage.getItem("chatRoom");
-  }
-
-  if (!chatRoom) return;
-
-  // 🔥 prevent duplicate listeners
-  if (chatListenerAttached) return;
-
-  chatListenerAttached = true;
-
-  const chatBox = document.getElementById("chatBox");
-
-  firebase.database()
-    .ref(chatRoom)
-    .on("child_added", snapshot => {
-
-      const msg = snapshot.val();
-
-      const div = document.createElement("div");
-
-      div.style.padding = "5px";
-      div.style.margin = "5px";
-      div.style.background = "#2a2a2a";
-      div.style.borderRadius = "5px";
-
-      div.innerText = msg.text;
-
-      chatBox.appendChild(div);
-
-      chatBox.scrollTop = chatBox.scrollHeight;
-    });
-}
-
-// =======================
-// LOAD REQUESTS
-// =======================
-function loadRequests() {
-  firebase.database().ref("requests")
-    .orderByChild("to")
-    .equalTo(currentUser.uid)
-    .on("value", snapshot => {
-
-      const container = document.getElementById("requests");
-      container.innerHTML = "";
-
-      snapshot.forEach(item => {
-        const data = item.val();
-
-        container.innerHTML += `
-          <div style="margin:5px; padding:10px; background:#2a2a2a;">
-            ${data.offer} → ${data.want}
-            <button onclick="accept('${item.key}','${data.from}')">Accept</button>
-          </div>
-        `;
-      });
-    });
-}
-
-// =======================
-// ACCEPT TRADE
-// =======================
-function accept(id, from) {
-
-  firebase.database().ref("requests/" + id).update({
-    status: "accepted"
-  });
-
-  chatRoom = "trade_" + from + "_" + currentUser.uid;
-
-  listenChat();
-}
-//========================
-//crypto holder
-// =======================
-  const contractAddress = "0xD7ACd2a9FD159E69Bb102A1ca21C9a3e3A5F771B";
-
-const contractABI = [
-  [
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "tradeId",
-        "type": "uint256"
-      }
-    ],
-    "name": "confirmTrade",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "seller",
-        "type": "address"
-      }
-    ],
-    "name": "createTrade",
-    "outputs": [],
-    "stateMutability": "payable",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "tradeCount",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "name": "trades",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "buyer",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "seller",
-        "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "amount",
-        "type": "uint256"
-      },
-      {
-        "internalType": "bool",
-        "name": "buyerConfirmed",
-        "type": "bool"
-      },
-      {
-        "internalType": "bool",
-        "name": "sellerConfirmed",
-        "type": "bool"
-      },
-      {
-        "internalType": "bool",
-        "name": "completed",
-        "type": "bool"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  }
-]
-];
-
-let contract;
-
-
-//======================
-//confirm function
-//======================
-
-  async function confirmEscrow() {
-
-  const tradeId =
-    document.getElementById("tradeId").value;
-
-  try {
+  try{
 
     const tx =
-      await contract.confirmTrade(tradeId);
+    await contract.confirmTrade(
+      tradeId
+    );
 
     await tx.wait();
 
     alert("Trade confirmed!");
 
-  } catch(err) {
+  }catch(err){
+
     console.error(err);
+
     alert("Confirmation failed");
+
   }
-}
-  
-// =======================
-// CHAT
-// =======================
-function listenChat() {
-  firebase.database().ref(chatRoom)
-    .on("child_added", snapshot => {
-      const msg = snapshot.val();
-      document.getElementById("chatBox").innerHTML += `<p>${msg.text}</p>`;
-    });
+
 }
 
-function sendMsg() {
-  const text = document.getElementById("msg").value;
-
-  if (!text) return;
-
-  firebase.database().ref(chatRoom).push({ text: text });
-
-  document.getElementById("msg").value = "";
-}
-
-// =======================
+// ========================
 // LOGOUT
-// =======================
-function logout() {
-  firebase.auth().signOut().then(() => {
-    window.location.href = "login.html";
+// ========================
+
+function logout(){
+
+  firebase.auth()
+  .signOut()
+  .then(()=>{
+
+    window.location.href =
+    "login.html";
+
   });
+
 }
 
 </script>
