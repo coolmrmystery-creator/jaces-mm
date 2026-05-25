@@ -189,15 +189,10 @@ console.log("Platform Loaded");
 
 const firebaseConfig = {
 
-  apiKey: "YOUR_API_KEY",
-
-  authDomain:
-  "YOUR_PROJECT.firebaseapp.com",
-
-  databaseURL:
-  "https://YOUR_PROJECT.firebaseio.com",
-
-  projectId: "YOUR_PROJECT"
+  apiKey: "AIzaSyDFsQbvotmK9ZXG8srNEBkpZiIhUMGe5Dc",
+  authDomain: "jace-mm.firebaseapp.com",
+  databaseURL: "https://jace-mm-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "jace-mm",
 
 };
 
@@ -220,11 +215,95 @@ let chatListenerAttached = false;
 // ========================
 
 const contractAddress =
-"PASTE_YOUR_CONTRACT_ADDRESS";
+"0xD7ACd2a9FD159E69Bb102A1ca21C9a3e3A5F771B";
 
 const contractABI = [
 
-  PASTE_YOUR_ABI_HERE
+  [
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "tradeId",
+        "type": "uint256"
+      }
+    ],
+    "name": "confirmTrade",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "seller",
+        "type": "address"
+      }
+    ],
+    "name": "createTrade",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "tradeCount",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "trades",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "buyer",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "seller",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bool",
+        "name": "buyerConfirmed",
+        "type": "bool"
+      },
+      {
+        "internalType": "bool",
+        "name": "sellerConfirmed",
+        "type": "bool"
+      },
+      {
+        "internalType": "bool",
+        "name": "completed",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  }
+]
 
 ];
 
