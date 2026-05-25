@@ -375,11 +375,16 @@ async function connectWallet(){
     const address =
     await signer.getAddress();
 
-    contract = new ethers.Contract(
-      contractAddress,
-      contractABI,
-      signer
-    );
+    // only initialize contract IF available
+    if(contractAddress && contractABI.length > 0){
+
+      contract = new ethers.Contract(
+        contractAddress,
+        contractABI,
+        signer
+      );
+
+    }
 
     document.getElementById(
       "walletDisplay"
