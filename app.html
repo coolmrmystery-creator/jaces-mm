@@ -77,10 +77,18 @@
 
   <div class="card">
     <h3>Create Trade</h3>
-
+    
     <input id="toUser" placeholder="Username">
     <input id="offer" placeholder="I offer">
     <input id="want" placeholder="I want">
+
+    <input id="sellerWallet" placeholder="Seller Wallet Address">
+
+<input id="ethAmount" placeholder="ETH Amount">
+
+<button onclick="createEscrowTrade()">
+  Create Escrow
+</button>
 
     <button onclick="createTrade()">Send Request</button>
 
@@ -94,6 +102,12 @@
 
     <input id="msg" placeholder="Message">
     <button onclick="sendMsg()">Send</button>
+
+    <input id="tradeId" placeholder="Trade ID">
+
+<button onclick="confirmEscrow()">
+Confirm Trade
+</button>
   </div>
 
 </div>
@@ -101,6 +115,9 @@
 <script>
 
 console.log("App loaded");
+  // ====================
+  //wallwt connect fix#2
+  // ====================
 
 // =======================
 // FIREBASE CONFIG
@@ -150,6 +167,11 @@ async function connectWallet() {
     await window.ethereum.request({ method: 'eth_requestAccounts' });
 
     signer = provider.getSigner();
+    contract = new ethers.Contract(
+  contractAddress,
+  contractABI,
+  signer
+);
 
     const address = await signer.getAddress();
 
@@ -251,7 +273,126 @@ function accept(id, from) {
 
   listenChat();
 }
+//========================
+//crypto holder
+// =======================
+  const contractAddress = "0xD7ACd2a9FD159E69Bb102A1ca21C9a3e3A5F771B";
 
+const contractABI = [
+  [
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "tradeId",
+        "type": "uint256"
+      }
+    ],
+    "name": "confirmTrade",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "seller",
+        "type": "address"
+      }
+    ],
+    "name": "createTrade",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "tradeCount",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "trades",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "buyer",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "seller",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bool",
+        "name": "buyerConfirmed",
+        "type": "bool"
+      },
+      {
+        "internalType": "bool",
+        "name": "sellerConfirmed",
+        "type": "bool"
+      },
+      {
+        "internalType": "bool",
+        "name": "completed",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  }
+]
+];
+
+let contract;
+
+
+//======================
+//confirm function
+//======================
+
+  async function confirmEscrow() {
+
+  const tradeId =
+    document.getElementById("tradeId").value;
+
+  try {
+
+    const tx =
+      await contract.confirmTrade(tradeId);
+
+    await tx.wait();
+
+    alert("Trade confirmed!");
+
+  } catch(err) {
+    console.error(err);
+    alert("Confirmation failed");
+  }
+}
+  
 // =======================
 // CHAT
 // =======================
