@@ -118,7 +118,38 @@ console.log("App loaded");
   // ====================
   //wallwt connect fix#2
   // ====================
+async function createEscrowTrade() {
 
+  if(!signer) {
+    alert("Connect wallet first");
+    return;
+  }
+
+  const seller =
+    document.getElementById("sellerWallet").value;
+
+  const amount =
+    document.getElementById("ethAmount").value;
+
+  try {
+
+    const tx = await contract.createTrade(
+      seller,
+      {
+        value: ethers.utils.parseEther(amount)
+      }
+    );
+
+    await tx.wait();
+
+    alert("Escrow created!");
+
+  } catch(err) {
+    console.error(err);
+    alert("Escrow failed");
+  }
+}
+  
 // =======================
 // FIREBASE CONFIG
 // =======================
@@ -134,6 +165,7 @@ firebase.initializeApp(firebaseConfig);
 let currentUser = null;
 let chatRoom = "";
 let provider, signer;
+let chatListenerAttached = false;
 
 // =======================
 // AUTH CHECK
@@ -210,29 +242,42 @@ function findUser(username, callback) {
 // =======================
 // CREATE TRADE
 // =======================
-function createTrade() {
+let chatListenerAttached = false;
 
-  const username = document.getElementById("toUser").value;
-  const offerVal = document.getElementById("offer").value;
-  const wantVal = document.getElementById("want").value;
+function listenChat() {
 
-  if (!username || !offerVal || !wantVal) {
-    alert("Fill all fields");
-    return;
+  if (!chatRoom) {
+    chatRoom = localStorage.getItem("chatRoom");
   }
 
-  findUser(username, (toUID) => {
+  if (!chatRoom) return;
 
-    firebase.database().ref("requests").push({
-      from: currentUser.uid,
-      to: toUID,
-      offer: offerVal,
-      want: wantVal,
-      status: "pending"
-    })
-    .then(() => alert("Trade request sent!"));
+  // 🔥 prevent duplicate listeners
+  if (chatListenerAttached) return;
 
-  });
+  chatListenerAttached = true;
+
+  const chatBox = document.getElementById("chatBox");
+
+  firebase.database()
+    .ref(chatRoom)
+    .on("child_added", snapshot => {
+
+      const msg = snapshot.val();
+
+      const div = document.createElement("div");
+
+      div.style.padding = "5px";
+      div.style.margin = "5px";
+      div.style.background = "#2a2a2a";
+      div.style.borderRadius = "5px";
+
+      div.innerText = msg.text;
+
+      chatBox.appendChild(div);
+
+      chatBox.scrollTop = chatBox.scrollHeight;
+    });
 }
 
 // =======================
