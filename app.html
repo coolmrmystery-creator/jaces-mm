@@ -350,62 +350,64 @@ firebase.auth().onAuthStateChanged(user => {
 // CONNECT WALLET
 // ========================
 
-async function connectWallet(){
+async function connectWallet() {
 
-  if(!window.ethereum){
+  console.log("Button clicked");
 
-    alert("Install MetaMask");
+  // check metamask
+  if (typeof window.ethereum === "undefined") {
+
+    alert("MetaMask not installed");
+
+    console.log("No ethereum provider");
 
     return;
   }
 
-  try{
+  try {
 
-    provider =
-    new ethers.providers.Web3Provider(
-      window.ethereum
-    );
+    console.log("Requesting wallet...");
 
+    // request accounts
     await window.ethereum.request({
       method: "eth_requestAccounts"
     });
 
-    signer = provider.getSigner();
+    console.log("Creating provider");
 
-    const address =
-    await signer.getAddress();
+    const provider =
+      new ethers.providers.Web3Provider(window.ethereum);
 
-    // only initialize contract IF available
-    if(contractAddress && contractABI.length > 0){
+    console.log("Getting signer");
 
-      contract = new ethers.Contract(
-        contractAddress,
-        contractABI,
-        signer
-      );
+    const signer = provider.getSigner();
 
-    }
+    console.log("Getting address");
 
-    document.getElementById(
-      "walletDisplay"
-    ).innerText =
-    "Connected: " +
-    address.slice(0,6) +
-    "..." +
-    address.slice(-4);
+    const address = await signer.getAddress();
 
-    alert("Wallet Connected");
+    console.log("SUCCESS:", address);
 
-  }catch(err){
+    alert("Connected: " + address);
 
-    console.error(err);
+    document.getElementById("walletDisplay")
+      .innerText =
+      "Connected: " +
+      address.slice(0,6) +
+      "..." +
+      address.slice(-4);
 
-    alert("Wallet connection failed");
+  } catch(err) {
+
+    console.error("FULL ERROR:", err);
+
+    alert(
+      "Wallet failed. Open console (F12)"
+    );
 
   }
 
 }
-
 // ========================
 // FIND USER
 // ========================
