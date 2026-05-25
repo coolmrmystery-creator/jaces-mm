@@ -91,30 +91,52 @@ document.getElementById("loginBtn").addEventListener("click", login);
 // ======================
 function signup() {
 
-  const email = document.getElementById("email").value.trim();
-  const password = document.getElementById("password").value.trim();
-  const username = document.getElementById("username").value.trim();
+  const email =
+    document.getElementById("email").value;
 
-  if (!email || !password || !username) {
-    showError("Fill all fields");
-    return;
-  }
+  const password =
+    document.getElementById("password").value;
 
-  firebase.auth().createUserWithEmailAndPassword(email, password)
-    .then((user) => {
+  const username =
+    document.getElementById("username").value;
 
-      return firebase.database().ref("users/" + user.user.uid).set({
-        username: username,
-        email: email
-      });
+  firebase.auth()
+  .createUserWithEmailAndPassword(
+    email,
+    password
+  )
 
-    })
-    .then(() => {
-      window.location.href = "app.html";
-    })
-    .catch(err => showError(err.message));
+  .then((userCredential) => {
+
+    const uid = userCredential.user.uid;
+
+    return firebase.database()
+    .ref("users/" + uid)
+    .set({
+
+      username: username.toLowerCase(),
+
+      email: email
+
+    });
+
+  })
+
+  .then(() => {
+
+    alert("Signup successful");
+
+    window.location.href = "app.html";
+
+  })
+
+  .catch(err => {
+
+    alert(err.message);
+
+  });
+
 }
-
 // ======================
 // LOGIN
 // ======================
