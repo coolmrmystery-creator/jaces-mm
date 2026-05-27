@@ -21,7 +21,7 @@
     .topbar{
       display:flex;
       justify-content:space-between;
-      padding:15px;
+      padding:15px;f
       background:rgba(0,0,0,0.3);
     }
 
@@ -390,30 +390,35 @@ function listenChat(){
   if(!chatRoom){
 
     chatRoom =
-    localStorage.getItem(
-      "chatRoom"
-    );
+    localStorage.getItem("chatRoom");
 
   }
 
-  if(!chatRoom) return;
+  if(!chatRoom){
+
+    console.log("No chat room");
+
+    return;
+
+  }
 
   const chatBox =
-  document.getElementById(
-    "chatBox"
-  );
+  document.getElementById("chatBox");
 
   chatBox.innerHTML = "";
 
+  const chatRef =
   firebase.database()
-  .ref("chats/" + chatRoom)
-  .off();
+  .ref("chats/" + chatRoom);
 
-  firebase.database()
-  .ref("chats/" + chatRoom)
-  .on("child_added", snapshot=>{
+  // ✅ PROPER CLEAN LISTENER RESET
+  chatRef.off();
+
+  chatRef.on("child_added", snapshot => {
 
     const msg = snapshot.val();
+
+    if(!msg || !msg.text) return;
 
     const div =
     document.createElement("div");
