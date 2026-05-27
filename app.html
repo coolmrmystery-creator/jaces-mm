@@ -107,6 +107,9 @@
     <button onclick="connectWallet()">
       Connect Wallet
     </button>
+    <button
+id="walletBtn"
+onclick="connectWallet()">
 
     <button onclick="logout()">
       Logout
@@ -328,7 +331,26 @@ async function connectWallet() {
 
     console.log("SUCCESS:", address);
 
-    alert("Connected: " + address);
+const btn =
+document.getElementById(
+  "walletBtn"
+);
+
+btn.innerText =
+"Wallet Connected";
+
+btn.disabled = true;
+
+btn.style.background =
+"#4CAF50";
+
+btn.style.cursor =
+"default";
+
+btn.style.opacity =
+"0.8";
+
+    
 
     document.getElementById("walletDisplay")
       .innerText =
