@@ -732,6 +732,8 @@ function accept(id, room){
 // CHAT
 // ======================
 
+let activeChatRef = null;
+
 function listenChat(){
 
   if(!chatRoom){
@@ -745,6 +747,10 @@ function listenChat(){
 
   if(!chatRoom){
 
+    console.log(
+      "No room selected"
+    );
+
     return;
 
   }
@@ -754,16 +760,25 @@ function listenChat(){
     "chatBox"
   );
 
+  // CLEAR UI
   chatBox.innerHTML = "";
 
-  const chatRef =
+  // REMOVE OLD LISTENER
+  if(activeChatRef){
+
+    activeChatRef.off();
+
+  }
+
+  // CREATE NEW LISTENER
+  activeChatRef =
   firebase.database()
   .ref("chats/" + chatRoom);
 
-  chatRef.off();
+  activeChatRef.on(
 
-  chatRef.on(
     "child_added",
+
     snapshot=>{
 
       const msg =
@@ -782,8 +797,17 @@ function listenChat(){
       div.className =
       "msg";
 
-      div.innerText =
-      msg.text;
+      div.innerHTML = `
+
+        <b>
+        ${msg.senderName || "User"}
+        </b>
+
+        <br>
+
+        ${msg.text}
+
+      `;
 
       chatBox.appendChild(
         div
@@ -793,40 +817,57 @@ function listenChat(){
       chatBox.scrollHeight;
 
     }
+
   );
 
 }
 
 function sendMsg(){
 
-  const text =
+  const input =
   document.getElementById(
     "msg"
-  ).value.trim();
+  );
 
-  if(!text) return;
+  const text =
+  input.value.trim();
+
+  if(!text){
+
+    return;
+
+  }
+
+  if(!chatRoom){
+
+    alert(
+      "No active trade room"
+    );
+
+    return;
+
+  }
 
   firebase.database()
   .ref("chats/" + chatRoom)
   .push({
 
-    text:
-    text,
+    text: text,
 
     sender:
     currentUser.uid,
 
-    time:
+    senderName:
+    currentUser.email,
+
+    timestamp:
     Date.now()
 
   });
 
-  document.getElementById(
-    "msg"
-  ).value = "";
+  input.value = "";
 
 }
-
 // ======================
 // LOGOUT
 // ======================
