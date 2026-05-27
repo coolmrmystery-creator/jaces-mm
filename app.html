@@ -700,25 +700,26 @@ function loadRequests(){
 // ======================
 // ACCEPT TRADE
 // ======================
-
 function accept(id, room){
 
   firebase.database()
   .ref("requests/" + id)
   .update({
 
-    status:
-    "accepted"
+    status: "accepted"
 
   });
 
+  // SAME ROOM FOR BOTH USERS
   chatRoom = room;
 
+  // SAVE LOCALLY
   localStorage.setItem(
     "chatRoom",
     room
   );
 
+  // START CHAT
   listenChat();
 
   alert(
