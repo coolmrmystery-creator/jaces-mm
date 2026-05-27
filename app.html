@@ -172,6 +172,29 @@ let signer;
 
 firebase.auth().onAuthStateChanged(user=>{
 
+  firebase.database()
+.ref("requests")
+.on("value", snapshot => {
+
+  snapshot.forEach(item => {
+
+    const data = item.val();
+
+    if(
+      data.status === "accepted" &&
+      (data.from === currentUser.uid ||
+       data.to === currentUser.uid)
+    ){
+
+      chatRoom = data.room;
+
+      listenChat();
+
+    }
+
+  });
+
+});
   if(!user){
 
     window.location.href =
