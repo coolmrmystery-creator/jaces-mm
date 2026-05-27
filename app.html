@@ -174,205 +174,36 @@ const firebaseConfig = {
   authDomain: "jace-mm.firebaseapp.com",
   databaseURL: "https://jace-mm-default-rtdb.asia-southeast1.firebasedatabase.app",
   projectId: "jace-mm"
+
 };
 
-  const contractAddress =
-"0xd9145CCE52D386f254917e481eB44e9943F39138";
-
-const contractABI =
-[
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "_seller",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "nonpayable",
-    "type": "constructor"
-  },
-  {
-    "inputs": [],
-    "name": "amount",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "approveBuyer",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "approveSeller",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "buyer",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "buyerApproved",
-    "outputs": [
-      {
-        "internalType": "bool",
-        "name": "",
-        "type": "bool"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "completed",
-    "outputs": [
-      {
-        "internalType": "bool",
-        "name": "",
-        "type": "bool"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "deposit",
-    "outputs": [],
-    "stateMutability": "payable",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "deposited",
-    "outputs": [
-      {
-        "internalType": "bool",
-        "name": "",
-        "type": "bool"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "getStatus",
-    "outputs": [
-      {
-        "internalType": "bool",
-        "name": "",
-        "type": "bool"
-      },
-      {
-        "internalType": "bool",
-        "name": "",
-        "type": "bool"
-      },
-      {
-        "internalType": "bool",
-        "name": "",
-        "type": "bool"
-      },
-      {
-        "internalType": "bool",
-        "name": "",
-        "type": "bool"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "seller",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "sellerApproved",
-    "outputs": [
-      {
-        "internalType": "bool",
-        "name": "",
-        "type": "bool"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  }
-];
 firebase.initializeApp(firebaseConfig);
 
-let currentUser = null;
+const contractAddress =
+"0xd9145CCE52D386f254917e481eB44e9943F39138";
 
+const contractABI = YOUR_ABI_HERE;
+
+let currentUser = null;
 let chatRoom = "";
 
 let provider;
 let signer;
+let contract;
+
+// ======================
+// AUTH
+// ======================
 
 firebase.auth().onAuthStateChanged(user=>{
 
-  firebase.database()
-.ref("requests")
-.on("value", snapshot => {
-
-  snapshot.forEach(item => {
-
-    const data = item.val();
-
-    if(
-      data.status === "accepted" &&
-      (data.from === currentUser.uid ||
-       data.to === currentUser.uid)
-    ){
-
-      chatRoom = data.room;
-
-      listenChat();
-
-    }
-
-  });
-
-});
   if(!user){
 
     window.location.href =
     "login.html";
 
     return;
+
   }
 
   currentUser = user;
@@ -381,16 +212,19 @@ firebase.auth().onAuthStateChanged(user=>{
 
 });
 
+// ======================
+// WALLET
+// ======================
+
 async function connectWallet(){
 
   try{
 
-    if(typeof window.ethereum ===
-    "undefined"){
+    if(!window.ethereum){
 
       alert("Install MetaMask");
-
       return;
+
     }
 
     provider =
@@ -405,6 +239,15 @@ async function connectWallet(){
 
     signer =
     provider.getSigner();
+
+    contract =
+    new ethers.Contract(
+
+      contractAddress,
+      contractABI,
+      signer
+
+    );
 
     const address =
     await signer.getAddress();
@@ -433,23 +276,21 @@ async function connectWallet(){
     );
 
   }
-  window.contract =
-new ethers.Contract(
 
-  contractAddress,
-  contractABI,
-  signer
+}
 
-);
+// ======================
+// ESCROW
+// ======================
 
-  async function depositEscrow(){
-
-  const amount =
-  document.getElementById(
-    "amount"
-  ).value;
+async function depositEscrow(){
 
   try{
+
+    const amount =
+    document.getElementById(
+      "amount"
+    ).value;
 
     const tx =
     await contract.deposit({
@@ -464,91 +305,169 @@ new ethers.Contract(
     await tx.wait();
 
     alert(
-      "Funds deposited!"
+      "Funds Deposited"
     );
 
   }catch(err){
 
     console.error(err);
 
-    alert("Deposit failed");
+    alert(
+      "Deposit Failed"
+    );
 
   }
 
 }
 
+async function approveBuyer(){
+
+  try{
+
+    const tx =
+    await contract.approveBuyer();
+
+    await tx.wait();
+
+    alert(
+      "Buyer Approved"
+    );
+
+  }catch(err){
+
+    console.error(err);
+
+  }
+
 }
+
+async function approveSeller(){
+
+  try{
+
+    const tx =
+    await contract.approveSeller();
+
+    await tx.wait();
+
+    alert(
+      "Seller Approved"
+    );
+
+  }catch(err){
+
+    console.error(err);
+
+  }
+
+}
+
+// ======================
+// CREATE TRADE
+// ======================
 
 function createTrade(){
 
   const username =
-  document.getElementById("toUser").value
-  .toLowerCase().trim();
+  document.getElementById(
+    "toUser"
+  ).value
+  .toLowerCase()
+  .trim();
 
   const offer =
-  document.getElementById("offer").value;
+  document.getElementById(
+    "offer"
+  ).value;
 
   const want =
-  document.getElementById("want").value;
+  document.getElementById(
+    "want"
+  ).value;
 
-  if(!username || !offer || !want){
+  if(
+    !username ||
+    !offer ||
+    !want
+  ){
+
     alert("Fill all fields");
     return;
+
   }
 
   firebase.database()
   .ref("users")
   .once("value")
-  .then(snapshot => {
+  .then(snapshot=>{
 
     let found = false;
 
-    snapshot.forEach(child => {
+    snapshot.forEach(child=>{
 
-      const user = child.val();
+      const user =
+      child.val();
 
-      if(user.username === username){
+      if(
+        user.username ===
+        username
+      ){
 
         found = true;
 
-        // 🔥 CREATE REQUEST FIRST
         const newRef =
         firebase.database()
         .ref("requests")
         .push();
 
-        const roomId = newRef.key; // ⭐ SAME ID = SAME ROOM
+        const roomId =
+        newRef.key;
 
         newRef.set({
 
-          from: currentUser.uid,
-          to: child.key,
-          offer: offer,
-          want: want,
-          room: roomId,
-          status: "pending"
+          from:
+          currentUser.uid,
+
+          to:
+          child.key,
+
+          offer:
+          offer,
+
+          want:
+          want,
+
+          room:
+          roomId,
+
+          status:
+          "pending"
 
         });
 
-        alert("Trade request sent!");
+        alert(
+          "Trade Request Sent"
+        );
 
       }
 
     });
 
     if(!found){
-      alert("User not found");
+
+      alert(
+        "User not found"
+      );
+
     }
 
   });
 
 }
 
-    if(!found){
-
-      alert("User not found");
-
-    }
+// ======================
+// LOAD REQUESTS
+// ======================
 
 function loadRequests(){
 
@@ -567,12 +486,16 @@ function loadRequests(){
 
     snapshot.forEach(item=>{
 
-      const data = item.val();
+      const data =
+      item.val();
 
       const div =
-      document.createElement("div");
+      document.createElement(
+        "div"
+      );
 
-      div.className = "request";
+      div.className =
+      "request";
 
       div.innerHTML = `
 
@@ -588,8 +511,9 @@ function loadRequests(){
 
       `;
 
-      div.querySelector("button")
-      .onclick = ()=>{
+      div.querySelector(
+        "button"
+      ).onclick = ()=>{
 
         accept(
           item.key,
@@ -606,71 +530,61 @@ function loadRequests(){
 
 }
 
+// ======================
+// ACCEPT TRADE
+// ======================
+
 function accept(id, room){
 
   firebase.database()
   .ref("requests/" + id)
   .update({
-    status: "accepted"
+
+    status:
+    "accepted"
+
   });
 
-  async function approveBuyer(){
-
-  try{
-
-    const tx =
-    await contract.approveBuyer();
-
-    await tx.wait();
-
-    alert(
-      "Buyer approved"
-    );
-
-  }catch(err){
-
-    console.error(err);
-
-  }
-
-}
-
-  // 🔥 BOTH USERS USE SAME ROOM
   chatRoom = room;
 
-  firebase.database()
-  .ref("activeRooms/" + room)
-  .set({
-    users: {
-      [currentUser.uid]: true
-    }
-  });
+  localStorage.setItem(
+    "chatRoom",
+    room
+  );
 
   listenChat();
 
-  alert("Trade accepted");
+  alert(
+    "Trade Accepted"
+  );
 
 }
+
+// ======================
+// CHAT
+// ======================
 
 function listenChat(){
 
   if(!chatRoom){
 
     chatRoom =
-    localStorage.getItem("chatRoom");
+    localStorage.getItem(
+      "chatRoom"
+    );
 
   }
 
   if(!chatRoom){
-
-    console.log("No chat room");
 
     return;
 
   }
 
   const chatBox =
-  document.getElementById("chatBox");
+  document.getElementById(
+    "chatBox"
+  );
 
   chatBox.innerHTML = "";
 
@@ -678,28 +592,40 @@ function listenChat(){
   firebase.database()
   .ref("chats/" + chatRoom);
 
-  // ✅ PROPER CLEAN LISTENER RESET
   chatRef.off();
 
-  chatRef.on("child_added", snapshot => {
+  chatRef.on(
+    "child_added",
+    snapshot=>{
 
-    const msg = snapshot.val();
+      const msg =
+      snapshot.val();
 
-    if(!msg || !msg.text) return;
+      if(
+        !msg ||
+        !msg.text
+      ) return;
 
-    const div =
-    document.createElement("div");
+      const div =
+      document.createElement(
+        "div"
+      );
 
-    div.className = "msg";
+      div.className =
+      "msg";
 
-    div.innerText = msg.text;
+      div.innerText =
+      msg.text;
 
-    chatBox.appendChild(div);
+      chatBox.appendChild(
+        div
+      );
 
-    chatBox.scrollTop =
-    chatBox.scrollHeight;
+      chatBox.scrollTop =
+      chatBox.scrollHeight;
 
-  });
+    }
+  );
 
 }
 
@@ -712,22 +638,18 @@ function sendMsg(){
 
   if(!text) return;
 
-  if(!chatRoom){
-
-    chatRoom =
-    localStorage.getItem(
-      "chatRoom"
-    );
-
-  }
-
   firebase.database()
   .ref("chats/" + chatRoom)
   .push({
 
-    text: text,
-    sender: currentUser.uid,
-    time: Date.now()
+    text:
+    text,
+
+    sender:
+    currentUser.uid,
+
+    time:
+    Date.now()
 
   });
 
@@ -736,6 +658,10 @@ function sendMsg(){
   ).value = "";
 
 }
+
+// ======================
+// LOGOUT
+// ======================
 
 function logout(){
 
