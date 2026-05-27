@@ -107,10 +107,7 @@
     <button onclick="connectWallet()">
       Connect Wallet
     </button>
-    <button
-id="walletBtn"
-onclick="connectWallet()">
-
+  
     <button onclick="logout()">
       Logout
     </button>
@@ -212,7 +209,12 @@ let chatRoom = "";
 let provider, signer, contract;
 
 let chatListenerAttached = false;
- 
+
+let provider;
+
+let signer;
+  
+let contract;
 
 // ========================
 // CONTRACT
