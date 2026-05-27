@@ -376,6 +376,45 @@ async function connectWallet(){
   }
 
 }
+    // button UI
+    const btn =
+    document.getElementById(
+      "walletBtn"
+    );
+
+    btn.innerText =
+    "Wallet Connected";
+
+    btn.disabled = true;
+
+    btn.style.background =
+    "#4CAF50";
+
+    btn.style.opacity = "0.8";
+
+    btn.style.cursor =
+    "default";
+
+    // save wallet locally
+    localStorage.setItem(
+      "walletConnected",
+      "true"
+    );
+
+    console.log(
+      "Wallet Connected:",
+      address
+    );
+
+  }catch(err){
+
+    console.error(err);
+
+    alert("Wallet connection failed");
+
+  }
+
+}
 }
 // ========================
 // FIND USER
