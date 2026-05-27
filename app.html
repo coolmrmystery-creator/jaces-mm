@@ -495,7 +495,7 @@ function loadRequests(){
 // ACCEPT TRADE
 // ========================
 
-function accept(id, from){
+function accept(id, from, room){
 
   firebase.database()
   .ref("requests/" + id)
@@ -505,21 +505,16 @@ function accept(id, from){
 
   });
 
-  const users =
-  [from, currentUser.uid].sort();
-
-  chatRoom =
-  "trade_" +
-  users[0] +
-  "_" +
-  users[1];
+  chatRoom = room;
 
   localStorage.setItem(
     "chatRoom",
-    chatRoom
+    room
   );
 
-  alert("Trade accepted");
+  listenChat();
+
+  alert("Trade accepted!");
 
 }
 
@@ -531,7 +526,6 @@ function listenChat(){
 
   if(!chatRoom){
 
-    chatRoom =
     localStorage.getItem(
       "chatRoom"
     );
