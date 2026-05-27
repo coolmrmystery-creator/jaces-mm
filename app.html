@@ -524,18 +524,18 @@ function createTrade(){
   document.getElementById(
     "toUser"
   ).value
-  .toLowerCase()
-  .trim();
+  .trim()
+  .toLowerCase();
 
   const offer =
   document.getElementById(
     "offer"
-  ).value;
+  ).value.trim();
 
   const want =
   document.getElementById(
     "want"
-  ).value;
+  ).value.trim();
 
   if(
     !username ||
@@ -543,7 +543,10 @@ function createTrade(){
     !want
   ){
 
-    alert("Fill all fields");
+    alert(
+      "Fill all fields"
+    );
+
     return;
 
   }
@@ -551,6 +554,7 @@ function createTrade(){
   firebase.database()
   .ref("users")
   .once("value")
+
   .then(snapshot=>{
 
     let found = false;
@@ -561,21 +565,20 @@ function createTrade(){
       child.val();
 
       if(
-        user.username ===
+        user.username &&
+        user.username
+        .toLowerCase() ===
         username
       ){
 
         found = true;
 
-        const newRef =
+        const requestRef =
         firebase.database()
         .ref("requests")
         .push();
 
-        const roomId =
-        newRef.key;
-
-        newRef.set({
+        requestRef.set({
 
           from:
           currentUser.uid,
@@ -590,26 +593,45 @@ function createTrade(){
           want,
 
           room:
-          roomId,
+          requestRef.key,
 
           status:
-          "pending"
+          "pending",
+
+          timestamp:
+          Date.now()
 
         });
 
         alert(
-          "Trade Request Sent"
+          "Trade Sent!"
         );
 
       }
 
     });
 
+    if(!found){
+
+      alert(
+        "User not found"
+      );
+
+    }
+
+  })
+
+  .catch(err=>{
+
+    console.error(err);
+
+    alert(
+      "Trade failed"
+    );
 
   });
 
 }
-
 // ======================
 // LOAD REQUESTS
 // ======================
