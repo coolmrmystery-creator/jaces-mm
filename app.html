@@ -212,6 +212,9 @@ let chatRoom = "";
 let provider, signer, contract;
 
 let chatListenerAttached = false;
+  let provider;
+let signer;
+let contract;
 
 // ========================
 // CONTRACT
@@ -293,82 +296,88 @@ firebase.auth().onAuthStateChanged(user => {
 // CONNECT WALLET
 // ========================
 
-async function connectWallet() {
+async function connectWallet(){
 
-  console.log("Button clicked");
+  if(!window.ethereum){
 
-  // check metamask
-  if (typeof window.ethereum === "undefined") {
-
-    alert("MetaMask not installed");
-
-    console.log("No ethereum provider");
+    alert("Install MetaMask");
 
     return;
   }
 
-  try {
+  try{
 
-    console.log("Requesting wallet...");
-
-    // request accounts
-    await window.ethereum.request({
-      method: "eth_requestAccounts"
-    });
-
-    console.log("Creating provider");
-
-    const provider =
-      new ethers.providers.Web3Provider(window.ethereum);
-
-    console.log("Getting signer");
-
-    const signer = provider.getSigner();
-
-    console.log("Getting address");
-
-    const address = await signer.getAddress();
-
-    console.log("SUCCESS:", address);
-
-const btn =
-document.getElementById(
-  "walletBtn"
-);
-
-btn.innerText =
-"Wallet Connected";
-
-btn.disabled = true;
-
-btn.style.background =
-"#4CAF50";
-
-btn.style.cursor =
-"default";
-
-btn.style.opacity =
-"0.8";
-
-    
-
-    document.getElementById("walletDisplay")
-      .innerText =
-      "Connected: " +
-      address.slice(0,6) +
-      "..." +
-      address.slice(-4);
-
-  } catch(err) {
-
-    console.error("FULL ERROR:", err);
-
-    alert(
-      "Wallet failed. Open console (F12)"
+    // 🔥 SAVE GLOBALLY
+    provider =
+    new ethers.providers.Web3Provider(
+      window.ethereum
     );
+
+    await provider.send(
+      "eth_requestAccounts",
+      []
+    );
+
+    signer =
+    provider.getSigner();
+
+    const address =
+    await signer.getAddress();
+
+    // optional contract init
+    if(
+      contractAddress &&
+      contractABI.length > 0
+    ){
+
+      contract =
+      new ethers.Contract(
+        contractAddress,
+        contractABI,
+        signer
+      );
+
+    }
+
+    // button UI
+    const btn =
+    document.getElementById(
+      "walletBtn"
+    );
+
+    btn.innerText =
+    "Wallet Connected";
+
+    btn.disabled = true;
+
+    btn.style.background =
+    "#4CAF50";
+
+    btn.style.opacity = "0.8";
+
+    btn.style.cursor =
+    "default";
+
+    // save wallet locally
+    localStorage.setItem(
+      "walletConnected",
+      "true"
+    );
+
+    console.log(
+      "Wallet Connected:",
+      address
+    );
+
+  }catch(err){
+
+    console.error(err);
+
+    alert("Wallet connection failed");
 
   }
 
+}
 }
 // ========================
 // FIND USER
