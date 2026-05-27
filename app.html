@@ -206,8 +206,6 @@ let currentUser = null;
 
 let chatRoom = "";
 
-let provider, signer, contract;
-
 let chatListenerAttached = false;
 
 let provider;
@@ -307,7 +305,6 @@ async function connectWallet(){
 
   try{
 
-    // 🔥 SAVE GLOBALLY
     provider =
     new ethers.providers.Web3Provider(
       window.ethereum
@@ -377,46 +374,6 @@ async function connectWallet(){
 
   }
 
-}
-    // button UI
-    const btn =
-    document.getElementById(
-      "walletBtn"
-    );
-
-    btn.innerText =
-    "Wallet Connected";
-
-    btn.disabled = true;
-
-    btn.style.background =
-    "#4CAF50";
-
-    btn.style.opacity = "0.8";
-
-    btn.style.cursor =
-    "default";
-
-    // save wallet locally
-    localStorage.setItem(
-      "walletConnected",
-      "true"
-    );
-
-    console.log(
-      "Wallet Connected:",
-      address
-    );
-
-  }catch(err){
-
-    console.error(err);
-
-    alert("Wallet connection failed");
-
-  }
-
-}
 }
 // ========================
 // FIND USER
