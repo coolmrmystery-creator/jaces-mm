@@ -241,18 +241,48 @@ firebase.auth().onAuthStateChanged(user => {
     window.location.href =
     "login.html";
 
-  }else{
-
-    currentUser = user;
-
-    loadRequests();
-
-    chatRoom =
-    localStorage.getItem("chatRoom");
-
-    listenChat();
-
+    return;
   }
+
+  currentUser = user;
+
+  loadRequests();
+
+  // 🔥 check active trades
+  firebase.database()
+  .ref("requests")
+  .on("value", snapshot => {
+
+    snapshot.forEach(item => {
+
+      const data = item.val();
+
+      // if user belongs to trade
+      if(
+        (data.from === currentUser.uid ||
+        data.to === currentUser.uid)
+
+        &&
+
+        data.activeRoom
+      ){
+
+        chatRoom = data.activeRoom;
+
+        localStorage.setItem(
+          "chatRoom",
+          chatRoom
+        );
+
+        chatListenerAttached = false;
+
+        listenChat();
+
+      }
+
+    });
+
+  });
 
 });
 
@@ -534,27 +564,21 @@ function accept(id, from, room){
 
 function listenChat(){
 
-  if(!chatRoom){
-
-    localStorage.getItem(
-      "chatRoom"
-    );
-
-  }
-
   if(!chatRoom) return;
-
-  if(chatListenerAttached) return;
-
-  chatListenerAttached = true;
 
   const chatBox =
   document.getElementById(
     "chatBox"
   );
 
+  chatBox.innerHTML = "";
+
   firebase.database()
-  .ref(chatRoom)
+  .ref("chats/" + chatRoom)
+  .off();
+
+  firebase.database()
+  .ref("chats/" + chatRoom)
   .on("child_added", snapshot => {
 
     const msg = snapshot.val();
@@ -574,27 +598,24 @@ function listenChat(){
   });
 
 }
-
 function sendMsg(){
 
   const text =
   document.getElementById(
     "msg"
-  ).value;
+  ).value.trim();
 
   if(!text) return;
 
   if(!chatRoom){
 
-    chatRoom =
-    localStorage.getItem(
-      "chatRoom"
-    );
+    alert("No active trade chat");
 
+    return;
   }
 
   firebase.database()
-  .ref(chatRoom)
+  .ref("chats/" + chatRoom)
   .push({
 
     text: text,
