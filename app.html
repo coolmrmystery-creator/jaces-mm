@@ -126,6 +126,21 @@
       Send Request
     </button>
 
+    <input id="amount"
+placeholder="ETH Amount">
+
+<button onclick="depositEscrow()">
+Deposit Escrow
+</button>
+
+<button onclick="approveBuyer()">
+Buyer Approve
+</button>
+
+<button onclick="approveSeller()">
+Seller Approve
+</button>
+
     <hr>
 
     <h2>Incoming Requests</h2>
@@ -161,6 +176,163 @@ const firebaseConfig = {
   projectId: "jace-mm"
 };
 
+  const contractAddress =
+"0xd9145CCE52D386f254917e481eB44e9943F39138";
+
+const contractABI =
+[
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_seller",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "inputs": [],
+    "name": "amount",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "approveBuyer",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "approveSeller",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "buyer",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "buyerApproved",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "completed",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "deposit",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "deposited",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getStatus",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      },
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      },
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      },
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "seller",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "sellerApproved",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  }
+];
 firebase.initializeApp(firebaseConfig);
 
 let currentUser = null;
@@ -261,6 +433,49 @@ async function connectWallet(){
     );
 
   }
+  window.contract =
+new ethers.Contract(
+
+  contractAddress,
+  contractABI,
+  signer
+
+);
+
+  async function depositEscrow(){
+
+  const amount =
+  document.getElementById(
+    "amount"
+  ).value;
+
+  try{
+
+    const tx =
+    await contract.deposit({
+
+      value:
+      ethers.utils.parseEther(
+        amount
+      )
+
+    });
+
+    await tx.wait();
+
+    alert(
+      "Funds deposited!"
+    );
+
+  }catch(err){
+
+    console.error(err);
+
+    alert("Deposit failed");
+
+  }
+
+}
 
 }
 
@@ -398,6 +613,27 @@ function accept(id, room){
   .update({
     status: "accepted"
   });
+
+  async function approveBuyer(){
+
+  try{
+
+    const tx =
+    await contract.approveBuyer();
+
+    await tx.wait();
+
+    alert(
+      "Buyer approved"
+    );
+
+  }catch(err){
+
+    console.error(err);
+
+  }
+
+}
 
   // 🔥 BOTH USERS USE SAME ROOM
   chatRoom = room;
