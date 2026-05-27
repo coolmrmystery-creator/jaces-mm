@@ -508,7 +508,9 @@ function accept(id, from, room){
   .ref("requests/" + id)
   .update({
 
-    status: "accepted"
+    status: "accepted",
+
+    activeRoom: room
 
   });
 
@@ -519,12 +521,13 @@ function accept(id, from, room){
     room
   );
 
+  chatListenerAttached = false;
+
   listenChat();
 
   alert("Trade accepted!");
 
 }
-
 // ========================
 // CHAT SYSTEM
 // ========================
