@@ -1,167 +1,70 @@
 <!DOCTYPE html>
-<html>
-<head>
-  <title>Login</title>
-
-  <!-- Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
-
-  <style>
-    body {
-      margin:0;
-      font-family: Arial;
-      background: linear-gradient(135deg, #1e2a38, #4a6fa5);
-      color:white;
-      display:flex;
-      justify-content:center;
-      align-items:center;
-      height:100vh;
-    }
-
-    .card {
-      background: rgba(255,255,255,0.1);
-      padding:30px;
-      border-radius:15px;
-      width:320px;
-      text-align:center;
-    }
-
-    input {
-      width:90%;
-      padding:10px;
-      margin:8px;
-      border:none;
-      border-radius:5px;
-    }
-
-    button {
-      width:95%;
-      padding:10px;
-      margin:5px;
-      background:#6ea8fe;
-      border:none;
-      color:white;
-      cursor:pointer;
-      border-radius:5px;
-    }
-
-    #error {
-      color:#ff6b6b;
-    }
-  </style>
-</head>
-
-<body>
-
-<div class="card">
-  <h2>Trade Platform</h2>
-
-  <input id="email" type="email" placeholder="Email">
-  <input id="password" type="password" placeholder="Password">
-  <input id="username" placeholder="Username (signup only)">
-
-  <button id="signupBtn">Sign Up</button>
-  <button id="loginBtn">Login</button>
-
-  <p id="error"></p>
-</div>
-
-<script>
-
-// 🔥 IMPORTANT: REPLACE WITH YOUR REAL CONFIG
-const firebaseConfig = {
-  apiKey: "AIzaSyDFsQbvotmK9ZXG8srNEBkpZiIhUMGe5Dc",
-  authDomain: "jace-mm.firebaseapp.com",
-  databaseURL: "https://jace-mm-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "jace-mm",
-};
-
-firebase.initializeApp(firebaseConfig);
-
-// ======================
-// BUTTON EVENTS (FIXED)
-// ======================
-document.getElementById("signupBtn").addEventListener("click", signup);
-document.getElementById("loginBtn").addEventListener("click", login);
-
-// ======================
-// SIGNUP
-// ======================
-function signup() {
-
-  const email =
-    document.getElementById("email").value;
-
-  const password =
-    document.getElementById("password").value;
-
-  const username =
-    document.getElementById("username").value;
-
-  firebase.auth()
-  .createUserWithEmailAndPassword(
     email,
     password
   )
 
-  .then((userCredential) => {
+  .then((userCredential)=>{
 
-    const uid = userCredential.user.uid;
+    const uid =
+    userCredential.user.uid;
 
     return firebase.database()
     .ref("users/" + uid)
     .set({
 
-      username: username.toLowerCase(),
-
+      username: username,
       email: email
 
     });
 
   })
 
-  .then(() => {
+  .then(()=>{
 
     alert("Signup successful");
 
-    window.location.href = "app.html";
+    window.location.href =
+    "app.html";
 
   })
 
-  .catch(err => {
+  .catch(err=>{
 
     alert(err.message);
 
   });
 
 }
-// ======================
-// LOGIN
-// ======================
-function login() {
 
-  const email = document.getElementById("email").value.trim();
-  const password = document.getElementById("password").value.trim();
+function login(){
 
-  if (!email || !password) {
-    showError("Enter email and password");
-    return;
-  }
+  const email =
+  document.getElementById("email")
+  .value;
 
-  firebase.auth().signInWithEmailAndPassword(email, password)
-    .then(() => {
-      window.location.href = "app.html";
-    })
-    .catch(err => showError(err.message));
-}
+  const password =
+  document.getElementById("password")
+  .value;
 
-// ======================
-// ERROR DISPLAY
-// ======================
-function showError(msg) {
-  document.getElementById("error").innerText = msg;
+  firebase.auth()
+  .signInWithEmailAndPassword(
+    email,
+    password
+  )
+
+  .then(()=>{
+
+    window.location.href =
+    "app.html";
+
+  })
+
+  .catch(err=>{
+
+    alert(err.message);
+
+  });
+
 }
 
 </script>
