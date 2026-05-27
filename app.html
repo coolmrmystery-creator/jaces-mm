@@ -378,17 +378,19 @@ function accept(id, room){
   firebase.database()
   .ref("requests/" + id)
   .update({
-
     status: "accepted"
-
   });
 
+  // 🔥 BOTH USERS USE SAME ROOM
   chatRoom = room;
 
-  localStorage.setItem(
-    "chatRoom",
-    room
-  );
+  firebase.database()
+  .ref("activeRooms/" + room)
+  .set({
+    users: {
+      [currentUser.uid]: true
+    }
+  });
 
   listenChat();
 
