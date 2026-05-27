@@ -392,6 +392,10 @@ function createTrade(){
 
         found = true;
 
+        // 🔥 unique room
+        const roomId =
+        "room_" + Date.now();
+
         firebase.database()
         .ref("requests")
         .push({
@@ -404,11 +408,18 @@ function createTrade(){
 
           want: want,
 
+          room: roomId,
+
           status: "pending"
 
         })
 
         .then(() => {
+
+          localStorage.setItem(
+            "chatRoom",
+            roomId
+          );
 
           alert("Trade request sent!");
 
@@ -427,7 +438,6 @@ function createTrade(){
   });
 
 }
-
 // ========================
 // LOAD REQUESTS
 // ========================
