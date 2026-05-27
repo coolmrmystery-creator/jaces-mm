@@ -1,4 +1,427 @@
 <!DOCTYPE html>
+<html>
+<head>
+  <title>Web3 Escrow Dashboard</title>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
+
+  <style>
+
+    body{
+      margin:0;
+      font-family:Arial;
+      background:linear-gradient(135deg,#1e2a38,#4a6fa5);
+      color:white;
+    }
+
+    .topbar{
+      display:flex;
+      justify-content:space-between;
+      padding:15px;
+      background:rgba(0,0,0,0.3);
+    }
+
+    .container{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:20px;
+      padding:20px;
+    }
+
+    .card{
+      background:rgba(255,255,255,0.1);
+      padding:20px;
+      border-radius:20px;
+    }
+
+    input{
+      width:100%;
+      padding:12px;
+      margin-top:10px;
+      border:none;
+      border-radius:10px;
+      box-sizing:border-box;
+    }
+
+    button{
+      width:100%;
+      padding:12px;
+      margin-top:10px;
+      border:none;
+      border-radius:10px;
+      background:#6ea8fe;
+      color:white;
+      cursor:pointer;
+    }
+
+    #chatBox{
+      height:350px;
+      overflow-y:auto;
+      background:#111;
+      border-radius:10px;
+      padding:10px;
+      margin-bottom:10px;
+    }
+
+    .msg{
+      background:#2a2a2a;
+      padding:10px;
+      border-radius:10px;
+      margin-top:5px;
+    }
+
+    .request{
+      background:#2a2a2a;
+      padding:10px;
+      border-radius:10px;
+      margin-top:10px;
+    }
+
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+
+  <h2>Web3 Escrow</h2>
+
+  <div>
+
+    <button
+    id="walletBtn"
+    onclick="connectWallet()">
+
+      Connect Wallet
+
+    </button>
+
+    <button onclick="logout()">
+      Logout
+    </button>
+
+  </div>
+
+</div>
+
+<div class="container">
+
+  <div class="card">
+
+    <h2>Create Trade</h2>
+
+    <input id="toUser"
+    placeholder="Trader Username">
+
+    <input id="offer"
+    placeholder="What you offer">
+
+    <input id="want"
+    placeholder="What you want">
+
+    <button onclick="createTrade()">
+      Send Request
+    </button>
+
+    <hr>
+
+    <h2>Incoming Requests</h2>
+
+    <div id="requests"></div>
+
+  </div>
+
+  <div class="card">
+
+    <h2>Trade Chat</h2>
+
+    <div id="chatBox"></div>
+
+    <input id="msg"
+    placeholder="Message">
+
+    <button onclick="sendMsg()">
+      Send
+    </button>
+
+  </div>
+
+</div>
+
+<script>
+
+const firebaseConfig = {
+
+  apiKey: "AIzaSyDFsQbvotmK9ZXG8srNEBkpZiIhUMGe5Dc",
+  authDomain: "jace-mm.firebaseapp.com",
+  databaseURL: "https://jace-mm-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "jace-mm"
+};
+
+firebase.initializeApp(firebaseConfig);
+
+let currentUser = null;
+
+let chatRoom = "";
+
+let provider;
+let signer;
+
+firebase.auth().onAuthStateChanged(user=>{
+
+  if(!user){
+
+    window.location.href =
+    "login.html";
+
+    return;
+  }
+
+  currentUser = user;
+
+  loadRequests();
+
+});
+
+async function connectWallet(){
+
+  try{
+
+    if(typeof window.ethereum ===
+    "undefined"){
+
+      alert("Install MetaMask");
+
+      return;
+    }
+
+    provider =
+    new ethers.providers.Web3Provider(
+      window.ethereum
+    );
+
+    await provider.send(
+      "eth_requestAccounts",
+      []
+    );
+
+    signer =
+    provider.getSigner();
+
+    const address =
+    await signer.getAddress();
+
+    const btn =
+    document.getElementById(
+      "walletBtn"
+    );
+
+    btn.innerText =
+    "Wallet Connected";
+
+    btn.disabled = true;
+
+    btn.style.background =
+    "#4CAF50";
+
+    console.log(address);
+
+  }catch(err){
+
+    console.error(err);
+
+    alert(
+      "Wallet connection failed"
+    );
+
+  }
+
+}
+
+function createTrade(){
+
+  const username =
+  document.getElementById(
+    "toUser"
+  ).value.toLowerCase().trim();
+
+  const offer =
+  document.getElementById(
+    "offer"
+  ).value;
+
+  const want =
+  document.getElementById(
+    "want"
+  ).value;
+
+  firebase.database()
+  .ref("users")
+  .once("value")
+
+  .then(snapshot=>{
+
+    let found = false;
+
+    snapshot.forEach(child=>{
+
+      const user = child.val();
+
+      if(user.username === username){
+
+        found = true;
+
+        const roomId =
+        "room_" + Date.now();
+
+        firebase.database()
+        .ref("requests")
+        .push({
+
+          from: currentUser.uid,
+          to: child.key,
+          offer: offer,
+          want: want,
+          room: roomId,
+          status: "pending"
+
+        });
+
+        alert("Trade request sent");
+
+      }
+
+    });
+
+    if(!found){
+
+      alert("User not found");
+
+    }
+
+  });
+
+}
+
+function loadRequests(){
+
+  firebase.database()
+  .ref("requests")
+  .orderByChild("to")
+  .equalTo(currentUser.uid)
+  .on("value", snapshot=>{
+
+    const container =
+    document.getElementById(
+      "requests"
+    );
+
+    container.innerHTML = "";
+
+    snapshot.forEach(item=>{
+
+      const data = item.val();
+
+      const div =
+      document.createElement("div");
+
+      div.className = "request";
+
+      div.innerHTML = `
+
+        <p>
+          ${data.offer}
+          →
+          ${data.want}
+        </p>
+
+        <button>
+          Accept
+        </button>
+
+      `;
+
+      div.querySelector("button")
+      .onclick = ()=>{
+
+        accept(
+          item.key,
+          data.room
+        );
+
+      };
+
+      container.appendChild(div);
+
+    });
+
+  });
+
+}
+
+function accept(id, room){
+
+  firebase.database()
+  .ref("requests/" + id)
+  .update({
+
+    status: "accepted"
+
+  });
+
+  chatRoom = room;
+
+  localStorage.setItem(
+    "chatRoom",
+    room
+  );
+
+  listenChat();
+
+  alert("Trade accepted");
+
+}
+
+function listenChat(){
+
+  if(!chatRoom){
+
+    chatRoom =
+    localStorage.getItem(
+      "chatRoom"
+    );
+
+  }
+
+  if(!chatRoom) return;
+
+  const chatBox =
+  document.getElementById(
+    "chatBox"
+  );
+
+  chatBox.innerHTML = "";
+
+  firebase.database()
+  .ref("chats/" + chatRoom)
+  .off();
+
+  firebase.database()
+  .ref("chats/" + chatRoom)
+  .on("child_added", snapshot=>{
+
+    const msg = snapshot.val();
+
+    const div =
+    document.createElement("div");
+
+    div.className = "msg";
+
+    div.innerText = msg.text;
+
     chatBox.appendChild(div);
 
     chatBox.scrollTop =
