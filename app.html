@@ -461,36 +461,44 @@ function loadRequests(){
 
       const data = item.val();
 
-      container.innerHTML += `
+      const div =
+      document.createElement("div");
 
-      <div class="request">
+      div.className = "request";
+
+      div.innerHTML = `
 
         <p>
-        ${data.offer}
-        →
-        ${data.want}
+          ${data.offer}
+          →
+          ${data.want}
         </p>
 
-        <onclick="accept(
-'${item.key}',
-'${data.from}',
-'${data.room}'
-)">
-
-        Accept
-
+        <button>
+          Accept
         </button>
 
-      </div>
-
       `;
+
+      // 🔥 FIXED BUTTON EVENT
+      div.querySelector("button")
+      .onclick = () => {
+
+        accept(
+          item.key,
+          data.from,
+          data.room
+        );
+
+      };
+
+      container.appendChild(div);
 
     });
 
   });
 
 }
-
 // ========================
 // ACCEPT TRADE
 // ========================
