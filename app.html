@@ -244,29 +244,28 @@ async function connectWallet(){
 function createTrade(){
 
   const username =
-  document.getElementById(
-    "toUser"
-  ).value.toLowerCase().trim();
+  document.getElementById("toUser").value
+  .toLowerCase().trim();
 
   const offer =
-  document.getElementById(
-    "offer"
-  ).value;
+  document.getElementById("offer").value;
 
   const want =
-  document.getElementById(
-    "want"
-  ).value;
+  document.getElementById("want").value;
+
+  if(!username || !offer || !want){
+    alert("Fill all fields");
+    return;
+  }
 
   firebase.database()
   .ref("users")
   .once("value")
-
-  .then(snapshot=>{
+  .then(snapshot => {
 
     let found = false;
 
-    snapshot.forEach(child=>{
+    snapshot.forEach(child => {
 
       const user = child.val();
 
@@ -274,12 +273,15 @@ function createTrade(){
 
         found = true;
 
-        const roomId =
-        "room_" + Date.now();
-
+        // 🔥 CREATE REQUEST FIRST
+        const newRef =
         firebase.database()
         .ref("requests")
-        .push({
+        .push();
+
+        const roomId = newRef.key; // ⭐ SAME ID = SAME ROOM
+
+        newRef.set({
 
           from: currentUser.uid,
           to: child.key,
@@ -290,10 +292,19 @@ function createTrade(){
 
         });
 
-        alert("Trade request sent");
+        alert("Trade request sent!");
 
       }
 
+    });
+
+    if(!found){
+      alert("User not found");
+    }
+
+  });
+
+}
     });
 
     if(!found){
