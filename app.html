@@ -578,30 +578,23 @@ function createTrade(){
         .ref("requests")
         .push();
 
-        requestRef.set({
+      requestRef.set({
 
-          from:
-          currentUser.uid,
+  from: currentUser.uid,
 
-          to:
-          child.key,
+  to: child.key,
 
-          offer:
-          offer,
+  offer: offer,
 
-          want:
-          want,
+  want: want,
 
-          room:
-          requestRef.key,
+  room: requestRef.key,
 
-          status:
-          "pending",
+  status: "pending",
 
-          timestamp:
-          Date.now()
+  timestamp: Date.now()
 
-        });
+});
 
         alert(
           "Trade Sent!"
@@ -697,6 +690,54 @@ function loadRequests(){
 
 }
 
+  // ====================
+  //accepted trades
+  // ====================
+  function syncAcceptedTrades(){
+
+  firebase.database()
+  .ref("requests")
+
+  .on("child_changed", snapshot=>{
+
+    const data =
+    snapshot.val();
+
+    if(
+
+      data.status === "accepted"
+
+      &&
+
+      (
+        data.from === currentUser.uid
+        ||
+        data.to === currentUser.uid
+      )
+
+    ){
+
+      // FORCE SAME ROOM
+      chatRoom = data.room;
+
+      localStorage.setItem(
+        "chatRoom",
+        data.room
+      );
+
+      console.log(
+        "Joined Room:",
+        chatRoom
+      );
+
+      listenChat();
+
+    }
+
+  });
+
+}
+
 // ======================
 // ACCEPT TRADE
 // ======================
@@ -708,23 +749,27 @@ function accept(id, room){
 
     status: "accepted"
 
+  })
+
+  .then(()=>{
+
+    // FORCE SAME ROOM
+    chatRoom = room;
+
+    // SAVE LOCALLY
+    localStorage.setItem(
+      "chatRoom",
+      room
+    );
+
+    // START CHAT
+    listenChat();
+
+    alert(
+      "Trade Accepted"
+    );
+
   });
-
-  // SAME ROOM FOR BOTH USERS
-  chatRoom = room;
-
-  // SAVE LOCALLY
-  localStorage.setItem(
-    "chatRoom",
-    room
-  );
-
-  // START CHAT
-  listenChat();
-
-  alert(
-    "Trade Accepted"
-  );
 
 }
 
