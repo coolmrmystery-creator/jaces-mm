@@ -289,6 +289,78 @@ firebase.auth().onAuthStateChanged(user => {
   });
 
 });
+  // ====================
+  //fire base function(attempt to fix wallet)
+  // ====================
+
+  async function connectWallet(){
+
+  try{
+
+    // Check MetaMask
+    if(typeof window.ethereum === "undefined"){
+
+      alert("MetaMask not installed");
+
+      return;
+    }
+
+    // Create provider
+    provider =
+    new ethers.providers.Web3Provider(
+      window.ethereum
+    );
+
+    // Request access
+    await provider.send(
+      "eth_requestAccounts",
+      []
+    );
+
+    // Save signer
+    signer =
+    provider.getSigner();
+
+    // Get wallet address
+    const address =
+    await signer.getAddress();
+
+    console.log(
+      "Connected:",
+      address
+    );
+
+    // Update button
+    const btn =
+    document.getElementById(
+      "walletBtn"
+    );
+
+    btn.innerText =
+    "Wallet Connected";
+
+    btn.disabled = true;
+
+    btn.style.background =
+    "#4CAF50";
+
+    // Show address
+    document.getElementById(
+      "walletDisplay"
+    ).innerText =
+    address;
+
+  }catch(err){
+
+    console.error(err);
+
+    alert(
+      "Wallet connection failed"
+    );
+
+  }
+
+}
 
 // ========================
 // CONNECT WALLET
